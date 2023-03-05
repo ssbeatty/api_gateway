@@ -1,0 +1,17 @@
+.idea/
+.intellij/
+*.iml
+.vscode/
+.DS_Store
+/dist
+/site/
+/docs/site/
+/autogen/
+*.log
+*.exe
+cover.out
+vendor/
+plugins-storage/
+plugins-local/
+traefik_changelog.md
+integration/tailscale.secret
