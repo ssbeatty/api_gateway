@@ -65,7 +65,7 @@ func (c *ConfigurationWatcher) startProviderAggregator() {
 			log.Info().Msgf("Starting provider %s", provider.Name())
 			err := provider.Provide(c.allProvidersConfigs, c.routinesPool)
 			if err != nil {
-				log.Error().Err(err).Msgf("Error starting provider aggregator %s", provider.Name())
+				log.Error().Err(err).Msgf("Error starting provider: %s", provider.Name())
 			}
 		})
 	}
@@ -92,7 +92,7 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 			}
 			c.mu.Lock()
 
-			log.Info().Msgf("Change new config from Provider %s", newConfig.ProviderName)
+			log.Info().Msgf("Change new config from Provider: %s", newConfig.ProviderName)
 
 			newConfigs := newConfig.Configuration
 			for name, currentConfig := range c.currentConfigs {

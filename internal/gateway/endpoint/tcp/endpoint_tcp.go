@@ -76,7 +76,7 @@ func NewTCPEndPoint(ctx context.Context, configuration *config.Endpoint, pool *s
 	}
 
 	rt := &tcprouter.Router{}
-	reqDecorator := requestdecorator.New(nil)
+	reqDecorator := requestdecorator.New()
 
 	httpServer, err := createHTTPServer(ctx, listener, true, reqDecorator)
 	if err != nil {
@@ -146,9 +146,15 @@ func (e *EndPoint) Start(ctx context.Context) {
 func (e *EndPoint) Shutdown(ctx context.Context) {
 	logger := log.Ctx(ctx)
 
-	graceTimeOut := 42 * time.Nanosecond
-	ctx, cancel := context.WithTimeout(ctx, graceTimeOut)
-	logger.Debug().Msgf("Waiting %s seconds before killing connections", graceTimeOut)
+	var (
+		cancel context.CancelFunc
+	)
+
+	graceTimeOut := config.DefaultConfig.Gateway.GraceTimeOut
+	if config.DefaultConfig.Gateway.GraceTimeOut > 0 {
+		_, cancel = context.WithTimeout(ctx, graceTimeOut)
+		logger.Debug().Msgf("Waiting %s seconds before killing connections", graceTimeOut)
+	}
 
 	var wg sync.WaitGroup
 
@@ -264,7 +270,7 @@ func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDec
 
 	var handler http.Handler
 	handler, err = forwardedheaders.NewXForwarded(
-		false,
+		true,
 		nil,
 		next)
 	if err != nil {
@@ -281,6 +287,7 @@ func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDec
 		})
 	}
 
+	// todo configs this
 	serverHTTP := &http.Server{
 		Handler:      handler,
 		ErrorLog:     stdlog.New(logs.NoLevel(log.Logger, zerolog.DebugLevel), "", 0),

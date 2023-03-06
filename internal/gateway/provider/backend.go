@@ -17,15 +17,8 @@ type Backend struct {
 
 func (b *Backend) Provide(configurationChan chan<- dynamic.Message, pool *safe.Pool) error {
 	pool.Go(func() {
-		for {
-			select {
-			case msg, ok := <-b.applyMessage:
-				if !ok {
-					return
-				}
-
-				configurationChan <- msg
-			}
+		for msg := range b.applyMessage {
+			configurationChan <- msg
 		}
 	})
 	return nil

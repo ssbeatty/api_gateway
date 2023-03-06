@@ -23,15 +23,16 @@ type RequestDecorator struct {
 }
 
 // New creates a new request host middleware.
-func New(hostResolverConfig *types.HostResolverConfig) *RequestDecorator {
-	requestDecorator := &RequestDecorator{}
-	if hostResolverConfig != nil {
-		requestDecorator.hostResolver = &Resolver{
-			CnameFlattening: hostResolverConfig.CnameFlattening,
-			ResolvConfig:    hostResolverConfig.ResolvConfig,
-			ResolvDepth:     hostResolverConfig.ResolvDepth,
-		}
+func New() *RequestDecorator {
+	requestDecorator := &RequestDecorator{
+		hostResolver: &Resolver{
+			CnameFlattening: false,
+			ResolvConfig:    "/etc/resolv.conf",
+			ResolvDepth:     5,
+			cache:           nil,
+		},
 	}
+
 	return requestDecorator
 }
 

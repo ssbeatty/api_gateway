@@ -1,0 +1,6 @@
+log:
+  level: debug
+  path: stdout
+
+gateway:
+  graceTimeOut: 50ns
