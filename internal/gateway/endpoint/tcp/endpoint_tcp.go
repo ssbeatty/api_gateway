@@ -2,25 +2,72 @@ package tcp
 
 import (
 	"api_gateway/internal/gateway/config"
+	"api_gateway/internal/gateway/muxer/requestdecorator"
+	"api_gateway/internal/gateway/router"
+	tcprouter "api_gateway/internal/gateway/router/tcp"
+	"api_gateway/pkg/logs"
+	"api_gateway/pkg/middlewares/contenttype"
+	"api_gateway/pkg/middlewares/forwardedheaders"
+	"api_gateway/pkg/safe"
 	"api_gateway/pkg/tcp"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/containous/alice"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	stdlog "log"
 	"net"
+	"net/http"
+	"net/url"
 	"sync"
 	"syscall"
 	"time"
 )
 
+type httpForwarder struct {
+	net.Listener
+	connChan chan net.Conn
+	errChan  chan error
+}
+
+func newHTTPForwarder(ln net.Listener) *httpForwarder {
+	return &httpForwarder{
+		Listener: ln,
+		connChan: make(chan net.Conn),
+		errChan:  make(chan error),
+	}
+}
+
+// ServeTCP uses the connection to serve it later in "Accept".
+func (h *httpForwarder) ServeTCP(conn tcp.WriteCloser) {
+	h.connChan <- conn
+}
+
+// Accept retrieves a served connection in ServeTCP.
+func (h *httpForwarder) Accept() (net.Conn, error) {
+	select {
+	case conn := <-h.connChan:
+		return conn, nil
+	case err := <-h.errChan:
+		return nil, err
+	}
+}
+
 type EndPoint struct {
-	listener net.Listener
-	switcher *tcp.HandlerSwitcher
-	tracker  *connectionTracker
+	listener    net.Listener
+	switcher    *tcp.HandlerSwitcher
+	tracker     *connectionTracker
+	httpServer  *httpServer
+	httpsServer *httpServer
+
+	pool *safe.Pool
 }
 
 // NewTCPEndPoint creates a new TCPEndPoint.
-func NewTCPEndPoint(ctx context.Context, configuration *config.Endpoint) (*EndPoint, error) {
+func NewTCPEndPoint(ctx context.Context, configuration *config.Endpoint, pool *safe.Pool) (*EndPoint, error) {
 	tracker := newConnectionTracker()
 
 	listener, err := buildListener(configuration)
@@ -28,15 +75,231 @@ func NewTCPEndPoint(ctx context.Context, configuration *config.Endpoint) (*EndPo
 		return nil, fmt.Errorf("error preparing server: %w", err)
 	}
 
-	//rt := &tcprouter.Router{}
-	//
-	//tcpSwitcher := &HandlerSwitcher{}
-	//tcpSwitcher.Switch(rt)
+	rt := &tcprouter.Router{}
+	reqDecorator := requestdecorator.New(nil)
+
+	httpServer, err := createHTTPServer(ctx, listener, true, reqDecorator)
+	if err != nil {
+		return nil, fmt.Errorf("error preparing http server: %w", err)
+	}
+
+	rt.SetHTTPForwarder(httpServer.Forwarder)
+
+	httpsServer, err := createHTTPServer(ctx, listener, false, reqDecorator)
+	if err != nil {
+		return nil, fmt.Errorf("error preparing https server: %w", err)
+	}
+
+	rt.SetHTTPSForwarder(httpsServer.Forwarder)
+
+	tcpSwitcher := &tcp.HandlerSwitcher{}
+	tcpSwitcher.Switch(rt)
 
 	return &EndPoint{
-		listener: listener,
-		//switcher: tcpSwitcher,
-		tracker: tracker,
+		listener:    listener,
+		switcher:    tcpSwitcher,
+		tracker:     tracker,
+		httpServer:  httpServer,
+		httpsServer: httpsServer,
+		pool:        pool,
+	}, nil
+}
+
+// Start starts the TCP server.
+func (e *EndPoint) Start(ctx context.Context) {
+	logger := log.Ctx(ctx)
+	logger.Debug().Msg("Starting TCP Server")
+
+	for {
+		conn, err := e.listener.Accept()
+		if err != nil {
+			logger.Error().Err(err).Send()
+
+			var opErr *net.OpError
+			if errors.As(err, &opErr) && opErr.Temporary() {
+				continue
+			}
+
+			var urlErr *url.Error
+			if errors.As(err, &urlErr) && urlErr.Temporary() {
+				continue
+			}
+
+			e.httpServer.Forwarder.errChan <- err
+			e.httpsServer.Forwarder.errChan <- err
+
+			return
+		}
+
+		writeCloser, err := writeCloser(conn)
+		if err != nil {
+			panic(err)
+		}
+
+		e.pool.Go(func() {
+			e.switcher.ServeTCP(newTrackedConnection(writeCloser, e.tracker))
+		})
+	}
+}
+
+// Shutdown stops the TCP connections.
+func (e *EndPoint) Shutdown(ctx context.Context) {
+	logger := log.Ctx(ctx)
+
+	graceTimeOut := 42 * time.Nanosecond
+	ctx, cancel := context.WithTimeout(ctx, graceTimeOut)
+	logger.Debug().Msgf("Waiting %s seconds before killing connections", graceTimeOut)
+
+	var wg sync.WaitGroup
+
+	shutdownServer := func(server stoppable) {
+		defer wg.Done()
+		err := server.Shutdown(ctx)
+		if err == nil {
+			return
+		}
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			logger.Debug().Err(err).Msg("Server failed to shutdown within deadline")
+			if err = server.Close(); err != nil {
+				logger.Error().Err(err).Send()
+			}
+			return
+		}
+
+		logger.Error().Err(err).Send()
+
+		// We expect Close to fail again because Shutdown most likely failed when trying to close a listener.
+		// We still call it however, to make sure that all connections get closed as well.
+		server.Close()
+	}
+
+	if e.httpServer.Server != nil {
+		wg.Add(1)
+		go shutdownServer(e.httpServer.Server)
+	}
+
+	if e.httpsServer.Server != nil {
+		wg.Add(1)
+		go shutdownServer(e.httpsServer.Server)
+
+	}
+
+	if e.tracker != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := e.tracker.Shutdown(ctx)
+			if err == nil {
+				return
+			}
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				logger.Debug().Err(err).Msg("Server failed to shutdown before deadline")
+			}
+			e.tracker.Close()
+		}()
+	}
+
+	wg.Wait()
+	cancel()
+}
+
+// SwitchRouter switches the TCP router handler.
+func (e *EndPoint) SwitchRouter(rt *tcprouter.Router) {
+	rt.SetHTTPForwarder(e.httpServer.Forwarder)
+
+	httpHandler := rt.GetHTTPHandler()
+	if httpHandler == nil {
+		httpHandler = router.BuildDefaultHTTPRouter()
+	}
+
+	e.httpServer.Switcher.UpdateHandler(httpHandler)
+
+	rt.SetHTTPSForwarder(e.httpsServer.Forwarder)
+
+	httpsHandler := rt.GetHTTPSHandler()
+	if httpsHandler == nil {
+		httpsHandler = router.BuildDefaultHTTPRouter()
+	}
+
+	e.httpsServer.Switcher.UpdateHandler(httpsHandler)
+
+	e.switcher.Switch(rt)
+
+}
+
+// writeCloser returns the given connection, augmented with the WriteCloser
+// implementation, if any was found within the underlying conn.
+func writeCloser(conn net.Conn) (tcp.WriteCloser, error) {
+	switch typedConn := conn.(type) {
+	case *net.TCPConn:
+		return typedConn, nil
+	default:
+		return nil, fmt.Errorf("unknown connection type %T", typedConn)
+	}
+}
+
+type stoppable interface {
+	Shutdown(context.Context) error
+	Close() error
+}
+
+type stoppableServer interface {
+	stoppable
+	Serve(listener net.Listener) error
+}
+
+type httpServer struct {
+	Server    stoppableServer
+	Forwarder *httpForwarder
+	Switcher  *HTTPHandlerSwitcher
+}
+
+func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDecorator *requestdecorator.RequestDecorator) (*httpServer, error) {
+	httpSwitcher := NewHandlerSwitcher(router.BuildDefaultHTTPRouter())
+
+	next, err := alice.New(requestdecorator.WrapHandler(reqDecorator)).Then(httpSwitcher)
+	if err != nil {
+		return nil, err
+	}
+
+	var handler http.Handler
+	handler, err = forwardedheaders.NewXForwarded(
+		false,
+		nil,
+		next)
+	if err != nil {
+		return nil, err
+	}
+
+	handler = http.AllowQuerySemicolons(handler)
+
+	handler = contenttype.DisableAutoDetection(handler)
+
+	if withH2c {
+		handler = h2c.NewHandler(handler, &http2.Server{
+			MaxConcurrentStreams: uint32(250),
+		})
+	}
+
+	serverHTTP := &http.Server{
+		Handler:      handler,
+		ErrorLog:     stdlog.New(logs.NoLevel(log.Logger, zerolog.DebugLevel), "", 0),
+		ReadTimeout:  time.Second * 30,
+		WriteTimeout: time.Second * 30,
+		IdleTimeout:  time.Second * 30,
+	}
+
+	listener := newHTTPForwarder(ln)
+	go func() {
+		err := serverHTTP.Serve(listener)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Ctx(ctx).Error().Err(err).Msg("Error while starting server")
+		}
+	}()
+	return &httpServer{
+		Server:    serverHTTP,
+		Forwarder: listener,
+		Switcher:  httpSwitcher,
 	}, nil
 }
 
@@ -134,4 +397,22 @@ func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
 	}
 
 	return tc, nil
+}
+
+func newTrackedConnection(conn tcp.WriteCloser, tracker *connectionTracker) *trackedConnection {
+	tracker.AddConnection(conn)
+	return &trackedConnection{
+		WriteCloser: conn,
+		tracker:     tracker,
+	}
+}
+
+type trackedConnection struct {
+	tracker *connectionTracker
+	tcp.WriteCloser
+}
+
+func (t *trackedConnection) Close() error {
+	t.tracker.RemoveConnection(t.WriteCloser)
+	return t.WriteCloser.Close()
 }

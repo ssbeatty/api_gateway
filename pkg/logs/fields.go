@@ -1,5 +1,8 @@
 package logs
 
 const (
-	ServiceName = "serviceName"
+	ServiceName    = "serviceName"
+	MiddlewareName = "middlewareName"
+	MiddlewareType = "middlewareType"
+	EndpointName   = "endpointName"
 )

@@ -32,13 +32,13 @@ type Rule struct {
 	Router      Router       `yaml:"router"`
 	Upstream    Upstream     `yaml:"upstream"`
 	Middlewares []Middleware `yaml:"middlewares"`
+	TLS         TLS
 }
 
 // Router match router
 type Router struct {
 	Rule     string `yaml:"rule"`
 	Priority int    `yaml:"priority"`
-	tls      TLS
 }
 
 // TLS config

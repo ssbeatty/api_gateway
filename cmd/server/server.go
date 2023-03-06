@@ -2,6 +2,8 @@ package main
 
 import (
 	"api_gateway/internal/gateway"
+	"api_gateway/internal/gateway/config"
+	"api_gateway/internal/gateway/dynamic"
 	"api_gateway/internal/gateway/provider"
 	"api_gateway/internal/gateway/watcher"
 	"api_gateway/pkg/logs"
@@ -9,6 +11,7 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func init() {
@@ -25,6 +28,21 @@ func main() {
 	w := watcher.NewConfigurationWatcher(routinesPool)
 
 	w.AddProvider(backend)
+
+	// todo test code
+	go func() {
+		time.Sleep(time.Second * 2)
+
+		backend.ReloadConfig(dynamic.Message{
+			ProviderName: backend.Name(),
+			Configuration: map[string]config.Endpoint{
+				"test": {
+					Name:       "test",
+					ListenPort: 8080,
+				},
+			},
+		})
+	}()
 
 	// server start
 	server := gateway.NewServer(routinesPool, w)
