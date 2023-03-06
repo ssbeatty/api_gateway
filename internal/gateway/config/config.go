@@ -1,5 +1,7 @@
 package config
 
+import "fmt"
+
 // EndpointType
 // string: tcp || udp
 type EndpointType string
@@ -18,6 +20,10 @@ type Endpoint struct {
 	ListenPort int          `yaml:"listen_port"`
 	Type       EndpointType `yaml:"type"`
 	Rules      []Rule       `yaml:"rules"`
+}
+
+func (e *Endpoint) GetAddress() string {
+	return fmt.Sprintf("0.0.0.0:%d", e.ListenPort)
 }
 
 // Rule location rule
