@@ -97,6 +97,22 @@ func main() {
 						},
 					},
 				},
+				//"udp-1": {
+				//	Name:       "udp-1",
+				//	Type:       config.EndpointTypeUDP,
+				//	ListenPort: 30001,
+				//	Routers: []config.Router{
+				//		{
+				//			Type: config.RuleTypeUDP,
+				//			Upstream: config.Upstream{
+				//				Type: config.UpstreamTypeServer,
+				//				Paths: []string{
+				//					"0.0.0.0:30000",
+				//				},
+				//			},
+				//		},
+				//	},
+				//},
 			},
 		})
 	})
@@ -106,7 +122,7 @@ func main() {
 	routerFactory := routerManager.NewRouterFactory(config.DefaultConfig.Gateway, upstreamFactory)
 
 	// server start
-	server := gateway.NewServer(routinesPool, w, routerFactory)
+	server := gateway.NewServer(routinesPool, w, routerFactory, &config.DefaultConfig.Gateway)
 
 	server.Start(ctx)
 	defer server.Close()

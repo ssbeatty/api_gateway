@@ -4,6 +4,7 @@ import (
 	"api_gateway/internal/gateway/config"
 	"api_gateway/internal/gateway/manager/upstream"
 	tcprouter "api_gateway/internal/gateway/router/tcp"
+	"api_gateway/pkg/udp"
 	"context"
 )
 
@@ -41,4 +42,13 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 		return nil
 	}
 	return router
+}
+
+// CreateUDPHandlers creates new UDP Handlers.
+func (f *Factory) CreateUDPHandlers(ctx context.Context, rtConf *config.Endpoint) udp.Handler {
+	handlers := f.buildUDPHandlers(rtConf)
+	if len(handlers) > 0 {
+		return handlers[0]
+	}
+	return nil
 }

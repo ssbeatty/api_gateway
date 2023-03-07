@@ -39,5 +39,6 @@ type Log struct {
 }
 
 type Gateway struct {
-	GraceTimeOut time.Duration `yaml:"graceTimeOut"`
+	GraceTimeOut     time.Duration `yaml:"graceTimeOut"`
+	ListenUDPTimeOut time.Duration `yaml:"listenUDPTimeOut"`
 }

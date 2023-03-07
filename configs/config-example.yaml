@@ -4,3 +4,4 @@ log:
 
 gateway:
   graceTimeOut: 50ns
+  listenUDPTimeOut: 30s
