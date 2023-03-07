@@ -39,7 +39,7 @@ type Endpoint struct {
 	Name       string       `yaml:"name"`
 	ListenPort int          `yaml:"listen_port"`
 	Type       EndpointType `yaml:"type"`
-	Routers    []Routers    `yaml:"routers"`
+	Routers    []Router     `yaml:"routers"`
 	TLSConfig  TLS          `yaml:"tls_config"`
 }
 
@@ -47,21 +47,14 @@ func (e *Endpoint) GetAddress() string {
 	return fmt.Sprintf("0.0.0.0:%d", e.ListenPort)
 }
 
-// Routers host match router
+// Router host match router
 // if not tls enable Host default *
 // else got a 4 layer host info use tls
-type Routers struct {
-	Host       string `yaml:"host"`
-	Rules      []Rule `yaml:"router"`
-	TlsEnabled bool   `yaml:"tls_enabled"`
-}
-
-// Rule example nginx location
-// if rule is http or https can be many
-// if rule is grpc or tcp stream can be one
-type Rule struct {
-	Type        RuleType     `yaml:"type"`
+type Router struct {
 	Rule        string       `yaml:"rule"`
+	Host        string       `yaml:"host"`
+	TlsEnabled  bool         `yaml:"tls_enabled"`
+	Type        RuleType     `yaml:"type"`
 	Priority    int          `yaml:"priority"`
 	Middlewares []Middleware `yaml:"middlewares"`
 	Upstream    Upstream     `yaml:"upstream"`

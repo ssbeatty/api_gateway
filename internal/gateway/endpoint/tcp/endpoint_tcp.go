@@ -57,13 +57,13 @@ func (h *httpForwarder) Accept() (net.Conn, error) {
 }
 
 type EndPoint struct {
-	listener    net.Listener
-	switcher    *tcp.HandlerSwitcher
-	tracker     *connectionTracker
-	httpServer  *httpServer
-	httpsServer *httpServer
-
-	pool *safe.Pool
+	listener      net.Listener
+	switcher      *tcp.HandlerSwitcher
+	tracker       *connectionTracker
+	httpServer    *httpServer
+	httpsServer   *httpServer
+	pool          *safe.Pool
+	configuration *config.Endpoint
 }
 
 // NewTCPEndPoint creates a new TCPEndPoint.
@@ -96,12 +96,13 @@ func NewTCPEndPoint(ctx context.Context, configuration *config.Endpoint, pool *s
 	tcpSwitcher.Switch(rt)
 
 	return &EndPoint{
-		listener:    listener,
-		switcher:    tcpSwitcher,
-		tracker:     tracker,
-		httpServer:  httpServer,
-		httpsServer: httpsServer,
-		pool:        pool,
+		listener:      listener,
+		switcher:      tcpSwitcher,
+		tracker:       tracker,
+		httpServer:    httpServer,
+		httpsServer:   httpsServer,
+		pool:          pool,
+		configuration: configuration,
 	}, nil
 }
 
@@ -269,6 +270,7 @@ func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDec
 	}
 
 	var handler http.Handler
+	// todo
 	handler, err = forwardedheaders.NewXForwarded(
 		true,
 		nil,
@@ -368,7 +370,7 @@ func (c *connectionTracker) Shutdown(ctx context.Context) error {
 	}
 }
 
-// Close close all the connections in the tracked connections list.
+// Close all the connections in the tracked connections list.
 func (c *connectionTracker) Close() {
 	c.lock.Lock()
 	defer c.lock.Unlock()

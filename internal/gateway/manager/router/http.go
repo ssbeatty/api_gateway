@@ -12,10 +12,10 @@ import (
 	"net/http"
 )
 
-func getRouters(rtConf *config.Endpoint, tls bool) []config.Routers {
+func getRouters(rtConf *config.Endpoint, tls bool) []config.Router {
 	var (
-		tlsRouters   []config.Routers
-		notlsRouters []config.Routers
+		tlsRouters   []config.Router
+		notlsRouters []config.Router
 	)
 	for _, router := range rtConf.Routers {
 		if router.TlsEnabled {
@@ -41,30 +41,28 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 	}
 
 	for _, router := range getRouters(rtConf, tls) {
-		for _, rule := range router.Rules {
-			if rule.Type != config.RuleTypeHTTP {
-				continue
-			}
-			// create every rule middleware for everyone http handler
-			// example /handler1 has auth middleware but /handler2 not
-			middleware := f.buildHttpMiddleware(ctx, rule.Middlewares)
+		if router.Type != config.RuleTypeHTTP {
+			continue
+		}
+		// create every rule middleware for everyone http handler
+		// example /handler1 has auth middleware but /handler2 not
+		middleware := f.buildHttpMiddleware(ctx, router.Middlewares)
 
-			handler, buildErr := f.buildHttpRouterHandler(rule)
-			if buildErr != nil {
-				logger.Debug().Msgf("Build http router error, %v", buildErr)
-				continue
-			}
-			then, chainErr := middleware.Then(handler)
-			if chainErr != nil {
-				logger.Error().Err(chainErr).Send()
-				continue
-			}
+		handler, buildErr := f.buildHttpRouterHandler(router)
+		if buildErr != nil {
+			logger.Debug().Msgf("Build http router error, %v", buildErr)
+			continue
+		}
+		then, chainErr := middleware.Then(handler)
+		if chainErr != nil {
+			logger.Error().Err(chainErr).Send()
+			continue
+		}
 
-			err = muxer.AddRoute(rule.Rule, rule.Priority, then)
-			if err != nil {
-				logger.Error().Err(err).Send()
-				continue
-			}
+		err = muxer.AddRoute(router.Rule, router.Priority, then)
+		if err != nil {
+			logger.Error().Err(err).Send()
+			continue
 		}
 	}
 
@@ -82,7 +80,7 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 	return newChain
 }
 
-func (f *Factory) buildHttpRouterHandler(rule config.Rule) (http.Handler, error) {
+func (f *Factory) buildHttpRouterHandler(rule config.Router) (http.Handler, error) {
 	if len(rule.Upstream.Paths) == 0 {
 		return nil, errors.New("Empty Services!")
 	}

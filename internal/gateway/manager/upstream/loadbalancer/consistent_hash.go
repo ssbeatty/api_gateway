@@ -74,7 +74,6 @@ func (c *ConsistentHashBanlance) Add(params ...string) error {
 	return nil
 }
 
-// Get 方法根据给定的对象获取最靠近它的那个节点
 func (c *ConsistentHashBanlance) Get(key string) (string, error) {
 	if c.IsEmpty() {
 		return "", errors.New("node is empty")

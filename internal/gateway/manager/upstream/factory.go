@@ -26,7 +26,7 @@ func (f *Factory) buildUpstreamLoadBalancer(upstreamConfig *config.Upstream) (lo
 	ipConf := map[string]int{}
 	for ipIndex, ipItem := range upstreamConfig.Paths {
 		if upstreamConfig.Weights == nil {
-			ipConf[ipItem] = 50
+			ipConf[ipItem] = 1
 			continue
 		}
 		ipConf[ipItem] = upstreamConfig.Weights[ipIndex]

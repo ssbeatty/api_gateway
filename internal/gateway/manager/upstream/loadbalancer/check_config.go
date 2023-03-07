@@ -95,7 +95,7 @@ func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalance
 	)
 	for item, w := range conf {
 		aList = append(aList, item)
-		if uri, err := url.ParseRequestURI(item); err == nil {
+		if uri, err := url.Parse(item); err == nil && uri.Hostname() != "" && uri.Port() != "" {
 			host := fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
 			checkInfoCfg[item] = checkInfo{
 				Host:     host,

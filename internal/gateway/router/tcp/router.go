@@ -191,6 +191,9 @@ func (r *Router) ServeTCP(conn tcp.WriteCloser) {
 
 // AddRoute defines a handler for the given rule.
 func (r *Router) AddRoute(rule string, priority int, target tcp.Handler) error {
+	if r.muxerTCP.HasRoutes() {
+		return errors.New("no Tls Route only has one")
+	}
 	return r.muxerTCP.AddRoute(rule, priority, target)
 }
 

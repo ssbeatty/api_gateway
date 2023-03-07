@@ -6,42 +6,49 @@ import (
 	"api_gateway/pkg/tcp"
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
-func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router, rtConf *config.Endpoint) (tcp.Handler, error) {
+func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router, rtConf *config.Endpoint) error {
 	var (
 		sHandler tcp.Handler
 	)
 
 	for _, router := range rtConf.Routers {
-		if len(router.Rules) != 1 {
-			return nil, errors.New("TCP route has only one rule")
-		}
-		rule := &router.Rules[0]
-		sHandler = f.buildTCPRouterHandlers(ctx, rule)
-		if rule.Type != config.RuleTypeTCP {
+		chain := tcp.NewChain()
+		middleware := f.buildTCPMiddleware(ctx, router.Middlewares)
+
+		sHandler = f.buildTCPRouterHandlers(ctx, router)
+		if router.Type != config.RuleTypeTCP {
 			continue
 		}
 
+		then, err := chain.Extend(*middleware).Then(sHandler)
+		if err != nil {
+			log.Error().Msgf("Error when create tcp router chain, %v", err)
+			continue
+		}
 		if router.TlsEnabled {
-			err := route.AddTLSRoute(fmt.Sprintf("HostSNI(`%s`)", router.Host), 0, sHandler)
+			handler := &tcp.TLSHandler{
+				Next:   then,
+				Config: rtConf.TLSConfig.Config,
+			}
+			err := route.AddTLSRoute(fmt.Sprintf("HostSNI(`%s`)", router.Host), 0, handler)
 			if err != nil {
 				log.Error().Msgf("Error When AddRoute, %v", err)
 			}
 		} else {
-			err := route.AddRoute("HostSNI(`*`)", 0, sHandler)
+			err := route.AddRoute("HostSNI(`*`)", 0, then)
 			if err != nil {
 				log.Error().Msgf("Error When AddRoute, %v", err)
 			}
 		}
 	}
 
-	return tcp.NewChain().Then(sHandler)
+	return nil
 }
 
-func (f *Factory) buildTCPRouterHandlers(ctx context.Context, rtConf *config.Rule) tcp.Handler {
+func (f *Factory) buildTCPRouterHandlers(ctx context.Context, rtConf config.Router) tcp.Handler {
 	handler, err := f.upstreamFactory.BuildTCPUpstreamHandler(ctx, &rtConf.Upstream)
 	if err != nil {
 		return nil

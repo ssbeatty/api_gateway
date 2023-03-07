@@ -45,8 +45,8 @@ func (dp *TcpReverseProxy) dialContext() func(ctx context.Context, network, addr
 		return dp.DialContext
 	}
 	return (&net.Dialer{
-		Timeout:   dp.DialTimeout,     //连接超时
-		KeepAlive: dp.KeepAlivePeriod, //设置连接的检测时长
+		Timeout:   dp.DialTimeout,
+		KeepAlive: dp.KeepAlivePeriod,
 	}).DialContext
 }
 
@@ -81,7 +81,7 @@ func (dp *TcpReverseProxy) ServeTCP(src tcp.WriteCloser) {
 		return
 	}
 
-	defer func() { go dst.Close() }()
+	defer dst.Close()
 
 	if ka := dp.keepAlivePeriod(); ka > 0 {
 		if c, ok := dst.(*net.TCPConn); ok {
@@ -89,10 +89,10 @@ func (dp *TcpReverseProxy) ServeTCP(src tcp.WriteCloser) {
 			_ = c.SetKeepAlivePeriod(ka)
 		}
 	}
-	errc := make(chan error, 1)
-	go dp.proxyCopy(errc, src, dst)
-	go dp.proxyCopy(errc, dst, src)
-	<-errc
+	errChan := make(chan error, 1)
+	go dp.proxyCopy(errChan, src, dst)
+	go dp.proxyCopy(errChan, dst, src)
+	<-errChan
 }
 
 func (dp *TcpReverseProxy) onDialError() func(src net.Conn, dstDialErr error) {
@@ -100,12 +100,12 @@ func (dp *TcpReverseProxy) onDialError() func(src net.Conn, dstDialErr error) {
 		return dp.OnDialError
 	}
 	return func(src net.Conn, dstDialErr error) {
-		log.Error().Msgf("tcpproxy: for incoming conn %v, error dialing %q: %v", src.RemoteAddr().String(), dp.Addr, dstDialErr)
+		log.Error().Msgf("proxy copy incoming conn %v, error dialing %q: %v", src.RemoteAddr().String(), dp.Addr, dstDialErr)
 		src.Close()
 	}
 }
 
-func (dp *TcpReverseProxy) proxyCopy(errc chan<- error, dst, src net.Conn) {
+func (dp *TcpReverseProxy) proxyCopy(errChan chan<- error, dst, src net.Conn) {
 	_, err := io.Copy(dst, src)
-	errc <- err
+	errChan <- err
 }

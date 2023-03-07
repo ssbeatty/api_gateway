@@ -10,9 +10,9 @@ import (
 	"api_gateway/internal/gateway/provider"
 	"api_gateway/internal/gateway/watcher"
 	"api_gateway/pkg/logs"
-	"api_gateway/pkg/middlewares/auth"
 	"api_gateway/pkg/safe"
 	"context"
+	"crypto/tls"
 	"os/signal"
 	"syscall"
 	"time"
@@ -38,11 +38,13 @@ func main() {
 	routinesPool.Go(func() {
 		time.Sleep(time.Second * 2)
 
-		authConfig := auth.BasicAuth{
-			Users: []string{
-				"demo:$apr1$lH3nyBaa$/wCu0V3.1kYdpZPHRbiyv/",
-			},
-		}
+		//authConfig := auth.BasicAuth{
+		//	Users: []string{
+		//		"demo:$apr1$lH3nyBaa$/wCu0V3.1kYdpZPHRbiyv/",
+		//	},
+		//}
+
+		crt, _ := tls.LoadX509KeyPair("demo.com.pem", "demo.com-key.pem")
 
 		backend.ReloadConfig(dynamic.Message{
 			ProviderName: backend.Name(),
@@ -51,30 +53,46 @@ func main() {
 					Name:       "tcp-1",
 					ListenPort: 8080,
 					Type:       config.EndpointTypeTCP,
-					Routers: []config.Routers{
+					TLSConfig: config.TLS{
+						Config: &tls.Config{
+							Certificates: []tls.Certificate{crt},
+						},
+					},
+					Routers: []config.Router{
 						{
 							Host:       "*",
 							TlsEnabled: false,
-							Rules: []config.Rule{
-								{
-									Type: config.RuleTypeHTTP,
-									Rule: "PathPrefix(`/`)",
-									Upstream: config.Upstream{
-										Type: config.UpstreamTypeURL,
-										Paths: []string{
-											"http://127.0.0.1:8088",
-											"http://127.0.0.1:8089",
-										},
-										LoadBalancerType: loadbalancer.LbRoundRobin,
-									},
-									Middlewares: []config.Middleware{
-										{
-											Type:   auth.BasicTypeName,
-											Config: &authConfig,
-											Name:   "test-base-auth",
-										},
-									},
+							Type:       config.RuleTypeTCP,
+							Upstream: config.Upstream{
+								Type: config.UpstreamTypeServer,
+								Paths: []string{
+									"127.0.0.1:8088",
+									"127.0.0.1:8089",
 								},
+								LoadBalancerType: loadbalancer.LbRoundRobin,
+							},
+							//Middlewares: []config.Middleware{
+							//	{
+							//		Name: "ip allow",
+							//		Type: ipallowlist.TypeName,
+							//		Config: &ipallowlist.TCPIPAllowList{
+							//			SourceRange: []string{
+							//				"192.168.50.102",
+							//			},
+							//		},
+							//	},
+							//},
+						},
+						{
+							Host:       "api.demo.com",
+							TlsEnabled: true,
+							Type:       config.RuleTypeTCP,
+							Upstream: config.Upstream{
+								Type: config.UpstreamTypeServer,
+								Paths: []string{
+									"api.demo.com:8443",
+								},
+								LoadBalancerType: loadbalancer.LbRoundRobin,
 							},
 						},
 					},
