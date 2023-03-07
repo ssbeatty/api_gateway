@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
+	"fmt"
+)
 
 const (
 	EndpointTypeTCP EndpointType = "tcp"
@@ -26,7 +29,7 @@ type EndpointType string
 type RuleType string
 
 // UpstreamType
-// string: url || static || server
+// string: url || static || server || service configs
 type UpstreamType string
 
 // Endpoint Every Endpoint provide a port
@@ -71,8 +74,10 @@ type TLS struct {
 
 // Upstream can be file path, url or server with port
 type Upstream struct {
-	Type  UpstreamType `yaml:"type"`
-	Paths []string
+	Type             UpstreamType `yaml:"type"`
+	Paths            []string
+	Weights          []int
+	LoadBalancerType loadbalancer.LbType
 }
 
 // Middleware name and config use interface

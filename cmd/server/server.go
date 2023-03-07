@@ -5,6 +5,8 @@ import (
 	"api_gateway/internal/gateway/config"
 	"api_gateway/internal/gateway/dynamic"
 	routerManager "api_gateway/internal/gateway/manager/router"
+	"api_gateway/internal/gateway/manager/upstream"
+	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
 	"api_gateway/internal/gateway/provider"
 	"api_gateway/internal/gateway/watcher"
 
@@ -54,8 +56,10 @@ func main() {
 									Upstream: config.Upstream{
 										Type: config.UpstreamTypeURL,
 										Paths: []string{
-											"http://192.168.50.102:80",
+											"http://127.0.0.1:8088",
+											"http://127.0.0.1:8089",
 										},
+										LoadBalancerType: loadbalancer.LbRoundRobin,
 									},
 								},
 							},
@@ -66,7 +70,9 @@ func main() {
 		})
 	})
 
-	routerFactory := routerManager.NewRouterFactory(config.DefaultConfig.Gateway)
+	upstreamFactory := upstream.NewFactory(config.DefaultConfig.Gateway, routinesPool)
+
+	routerFactory := routerManager.NewRouterFactory(config.DefaultConfig.Gateway, upstreamFactory)
 
 	// server start
 	server := gateway.NewServer(routinesPool, w, routerFactory)
