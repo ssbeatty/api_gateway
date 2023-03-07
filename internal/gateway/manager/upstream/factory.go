@@ -4,6 +4,8 @@ import (
 	"api_gateway/internal/gateway/config"
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
 	"api_gateway/pkg/safe"
+	"api_gateway/pkg/tcp"
+	"context"
 	"net/http"
 )
 
@@ -47,4 +49,14 @@ func (f *Factory) BuildHttpUpstreamHandler(upstreamConfig *config.Upstream) (htt
 	}
 
 	return f.NewLoadBalanceReverseProxy(lb), nil
+}
+
+func (f *Factory) BuildTCPUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (tcp.Handler, error) {
+	lb, err := f.buildUpstreamLoadBalancer(upstreamConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return f.NewTcpLoadBalanceReverseProxy(ctx, lb), nil
 }

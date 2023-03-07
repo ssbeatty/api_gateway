@@ -42,13 +42,16 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 
 	for _, router := range getRouters(rtConf, tls) {
 		for _, rule := range router.Rules {
+			if rule.Type != config.RuleTypeHTTP {
+				continue
+			}
 			// create every rule middleware for everyone http handler
 			// example /handler1 has auth middleware but /handler2 not
 			middleware := f.buildHttpMiddleware(ctx, rule.Middlewares)
 
 			handler, buildErr := f.buildHttpRouterHandler(rule)
 			if buildErr != nil {
-				logger.Error().Err(err).Send()
+				logger.Debug().Msgf("Build http router error, %v", buildErr)
 				continue
 			}
 			then, chainErr := middleware.Then(handler)

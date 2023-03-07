@@ -194,6 +194,11 @@ func (r *Router) AddRoute(rule string, priority int, target tcp.Handler) error {
 	return r.muxerTCP.AddRoute(rule, priority, target)
 }
 
+// AddTLSRoute defines a handler for the given rule.
+func (r *Router) AddTLSRoute(rule string, priority int, target tcp.Handler) error {
+	return r.muxerTCPTLS.AddRoute(rule, priority, target)
+}
+
 // AddHTTPTLSConfig defines a handler for a given sniHost and sets the matching tlsConfig.
 func (r *Router) AddHTTPTLSConfig(sniHost string, config *tls.Config) {
 	if r.hostHTTPTLSConfig == nil {

@@ -35,5 +35,10 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 
 	router.SetHTTPHandler(handlersNonTLS)
 	router.SetHTTPSHandler(handlersTLS, rtConf.TLSConfig.Config)
+
+	_, err = f.buildTCPHandlers(ctx, router, rtConf)
+	if err != nil {
+		return nil
+	}
 	return router
 }
