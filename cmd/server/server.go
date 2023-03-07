@@ -9,8 +9,8 @@ import (
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
 	"api_gateway/internal/gateway/provider"
 	"api_gateway/internal/gateway/watcher"
-
 	"api_gateway/pkg/logs"
+	"api_gateway/pkg/middlewares/auth"
 	"api_gateway/pkg/safe"
 	"context"
 	"os/signal"
@@ -38,6 +38,12 @@ func main() {
 	routinesPool.Go(func() {
 		time.Sleep(time.Second * 2)
 
+		authConfig := auth.BasicAuth{
+			Users: []string{
+				"demo:$apr1$lH3nyBaa$/wCu0V3.1kYdpZPHRbiyv/",
+			},
+		}
+
 		backend.ReloadConfig(dynamic.Message{
 			ProviderName: backend.Name(),
 			Configuration: map[string]config.Endpoint{
@@ -60,6 +66,13 @@ func main() {
 											"http://127.0.0.1:8089",
 										},
 										LoadBalancerType: loadbalancer.LbRoundRobin,
+									},
+									Middlewares: []config.Middleware{
+										{
+											Type:   auth.BasicTypeName,
+											Config: &authConfig,
+											Name:   "test-base-auth",
+										},
 									},
 								},
 							},

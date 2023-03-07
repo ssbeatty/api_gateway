@@ -26,11 +26,14 @@ func NewRouterFactory(staticConfiguration config.Gateway, upstreamFactory *upstr
 func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) *tcprouter.Router {
 
 	handlersNonTLS := f.buildHttpHandlers(ctx, rtConf, false)
+	handlersTLS := f.buildHttpHandlers(ctx, rtConf, true)
+
 	router, err := tcprouter.NewRouter()
 	if err != nil {
 		return nil
 	}
 
 	router.SetHTTPHandler(handlersNonTLS)
+	router.SetHTTPSHandler(handlersTLS, rtConf.TLSConfig.Config)
 	return router
 }

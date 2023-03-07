@@ -1,7 +1,7 @@
 package recovery
 
 import (
-	"api_gateway/pkg/middlewares"
+	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"net/http"
 	"runtime"
@@ -18,7 +18,7 @@ type recovery struct {
 
 // New creates recovery middleware.
 func New(ctx context.Context, next http.Handler) (http.Handler, error) {
-	middlewares.GetLogger(ctx, middlewareName, typeName).Debug().Msg("Creating middleware")
+	logs.GetLogger(ctx, middlewareName, typeName).Debug().Msg("Creating middleware")
 
 	return &recovery{
 		next: next,
@@ -32,7 +32,7 @@ func (re *recovery) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func recoverFunc(rw http.ResponseWriter, req *http.Request) {
 	if err := recover(); err != nil {
-		logger := middlewares.GetLogger(req.Context(), middlewareName, typeName)
+		logger := logs.GetLogger(req.Context(), middlewareName, typeName)
 		if !shouldLogPanic(err) {
 			logger.Debug().Msgf("Request has been aborted [%s - %s]: %v", req.RemoteAddr, req.URL, err)
 			return

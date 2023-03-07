@@ -1,19 +1,21 @@
 package middlewares
 
 import (
+	"api_gateway/pkg/middlewares/auth"
 	"context"
-
-	"api_gateway/pkg/logs"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/pkg/errors"
+	"net/http"
 )
 
-// GetLogger creates a logger with the middleware fields.
-func GetLogger(ctx context.Context, middleware, middlewareType string) *zerolog.Logger {
-	logger := log.Ctx(ctx).With().
-		Str(logs.MiddlewareName, middleware).
-		Str(logs.MiddlewareType, middlewareType).
-		Logger()
+type MiddlewareCfg interface {
+	Validator() error
+}
 
-	return &logger
+func NewMiddlewareWithType(ctx context.Context, next http.Handler, cfg MiddlewareCfg, mType, name string) (http.Handler, error) {
+	switch mType {
+	case auth.BasicTypeName:
+		return auth.NewBasic(ctx, next, cfg.(*auth.BasicAuth), name)
+	}
+
+	return nil, errors.New("Can not Parse middleware type")
 }

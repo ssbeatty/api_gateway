@@ -12,6 +12,26 @@ import (
 	"net/http"
 )
 
+func getRouters(rtConf *config.Endpoint, tls bool) []config.Routers {
+	var (
+		tlsRouters   []config.Routers
+		notlsRouters []config.Routers
+	)
+	for _, router := range rtConf.Routers {
+		if router.TlsEnabled {
+			tlsRouters = append(tlsRouters, router)
+			continue
+		}
+		notlsRouters = append(notlsRouters, router)
+	}
+
+	if tls {
+		return tlsRouters
+	}
+
+	return notlsRouters
+}
+
 func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint, tls bool) http.Handler {
 	logger := log.With().Str(logs.EndpointName, rtConf.Name).Logger()
 
@@ -20,19 +40,24 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 		return nil
 	}
 
-	// todo build middle
-	for _, router := range rtConf.Routers {
-		if tls || router.TlsEnabled || router.Host != "*" {
-			continue
-		}
+	for _, router := range getRouters(rtConf, tls) {
 		for _, rule := range router.Rules {
+			// create every rule middleware for everyone http handler
+			// example /handler1 has auth middleware but /handler2 not
+			middleware := f.buildHttpMiddleware(ctx, rule.Middlewares)
+
 			handler, buildErr := f.buildHttpRouterHandler(rule)
 			if buildErr != nil {
 				logger.Error().Err(err).Send()
 				continue
 			}
+			then, chainErr := middleware.Then(handler)
+			if chainErr != nil {
+				logger.Error().Err(chainErr).Send()
+				continue
+			}
 
-			err = muxer.AddRoute(rule.Rule, rule.Priority, handler)
+			err = muxer.AddRoute(rule.Rule, rule.Priority, then)
 			if err != nil {
 				logger.Error().Err(err).Send()
 				continue

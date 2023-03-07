@@ -2,6 +2,8 @@ package config
 
 import (
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
+	middleware "api_gateway/pkg/middlewares"
+	"crypto/tls"
 	"fmt"
 )
 
@@ -38,6 +40,7 @@ type Endpoint struct {
 	ListenPort int          `yaml:"listen_port"`
 	Type       EndpointType `yaml:"type"`
 	Routers    []Routers    `yaml:"routers"`
+	TLSConfig  TLS          `yaml:"tls_config"`
 }
 
 func (e *Endpoint) GetAddress() string {
@@ -48,28 +51,25 @@ func (e *Endpoint) GetAddress() string {
 // if not tls enable Host default *
 // else got a 4 layer host info use tls
 type Routers struct {
-	Host        string       `yaml:"host"`
-	Rules       []Rule       `yaml:"router"`
-	Middlewares []Middleware `yaml:"middlewares"`
-	TLSConfig   TLS          `yaml:"tls_config"`
-	TlsEnabled  bool         `yaml:"tls_enabled"`
+	Host       string `yaml:"host"`
+	Rules      []Rule `yaml:"router"`
+	TlsEnabled bool   `yaml:"tls_enabled"`
 }
 
 // Rule example nginx location
 // if rule is http or https can be many
 // if rule is grpc or tcp stream can be one
 type Rule struct {
-	Type     RuleType `yaml:"type"`
-	Rule     string   `yaml:"rule"`
-	Priority int      `yaml:"priority"`
-	Upstream Upstream `yaml:"upstream"`
+	Type        RuleType     `yaml:"type"`
+	Rule        string       `yaml:"rule"`
+	Priority    int          `yaml:"priority"`
+	Middlewares []Middleware `yaml:"middlewares"`
+	Upstream    Upstream     `yaml:"upstream"`
 }
 
 // TLS config
 type TLS struct {
-	Enable  bool
-	CsrPath string
-	KeyPath string
+	Config *tls.Config
 }
 
 // Upstream can be file path, url or server with port
@@ -81,7 +81,10 @@ type Upstream struct {
 }
 
 // Middleware name and config use interface
+// 4 layer middleware example tcp or udp
+// 7 layer middleware example http or https or grpc
 type Middleware struct {
 	Name   string
-	Config string
+	Type   string
+	Config middleware.MiddlewareCfg
 }

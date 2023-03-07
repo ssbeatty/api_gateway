@@ -1,7 +1,7 @@
 package contenttype
 
 import (
-	"api_gateway/pkg/middlewares"
+	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"net/http"
 )
@@ -18,14 +18,14 @@ type contentType struct {
 
 // New creates a new handler.
 func New(ctx context.Context, next http.Handler, name string) (http.Handler, error) {
-	middlewares.GetLogger(ctx, name, typeName).Debug().Msg("Creating middleware")
+	logs.GetLogger(ctx, name, typeName).Debug().Msg("Creating middleware")
 	return &contentType{next: next, name: name}, nil
 }
 
 func (c *contentType) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// Re-enable auto-detection.
 	if ct, ok := rw.Header()["Content-Type"]; ok && ct == nil {
-		middlewares.GetLogger(req.Context(), c.name, typeName).
+		logs.GetLogger(req.Context(), c.name, typeName).
 			Debug().Msg("Enable Content-Type auto-detection.")
 		delete(rw.Header(), "Content-Type")
 	}

@@ -13,12 +13,12 @@ func (f *Factory) NewLoadBalanceReverseProxy(lb loadbalancer.LoadBalance) *httpu
 	director := func(req *http.Request) {
 		nextAddr, err := lb.Get(req.URL.String())
 		if err != nil || nextAddr == "" {
-			log.Error().Msgf("Error When get last url")
+			log.Error().Msgf("Load Balance Poll is empty")
 			return
 		}
 		target, err := url.Parse(nextAddr)
 		if err != nil {
-			log.Error().Msgf("Error When parse url")
+			log.Error().Msgf("Error When parse Balance Poll url")
 			return
 		}
 		targetQuery := target.RawQuery
