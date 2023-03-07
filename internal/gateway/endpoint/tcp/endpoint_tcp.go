@@ -239,10 +239,13 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 
 		gs.Forwarder = routerManager.NewGrpcForwarder(e.listener)
 		rt.SetGRPCForwarder(gs.Forwarder)
-		err := e.grpcServer.Server.Serve(gs.Forwarder)
-		if err != nil {
-			log.Error().Err(err).Send()
-		}
+
+		e.pool.Go(func() {
+			err := e.grpcServer.Server.Serve(gs.Forwarder)
+			if err != nil {
+				log.Error().Err(err).Send()
+			}
+		})
 	}
 
 }
