@@ -17,7 +17,7 @@ import (
 type TCPEndpoint interface {
 	Start(ctx context.Context)
 	Shutdown(ctx context.Context)
-	SwitchRouter(rt *tcprouter.Router)
+	SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServer)
 }
 
 type UDPEndpoint interface {
@@ -146,9 +146,9 @@ func (s *Server) setupConfigWatcher(ctx context.Context) {
 }
 
 func (s *Server) switchTCPRouter(ctx context.Context, serverEntryPointsTCP TCPEndpoint, conf dynamic.Configuration) {
-	routers := s.routerFactory.CreateTCPRouters(ctx, &conf.EndPoint)
+	routers, grpcServer := s.routerFactory.CreateTCPRouters(ctx, &conf.EndPoint)
 
-	serverEntryPointsTCP.SwitchRouter(routers)
+	serverEntryPointsTCP.SwitchRouter(routers, grpcServer)
 }
 
 func (s *Server) switchUDPRouter(ctx context.Context, serverEntryPointsUDP UDPEndpoint, conf dynamic.Configuration) {

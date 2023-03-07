@@ -6,6 +6,7 @@ import (
 	"api_gateway/pkg/tcp"
 	"context"
 	"github.com/containous/alice"
+	"google.golang.org/grpc"
 	"net/http"
 )
 
@@ -29,4 +30,18 @@ func (f *Factory) buildTCPMiddleware(ctx context.Context, middlewares []config.M
 		})
 	}
 	return &chain
+}
+
+func (f *Factory) buildGrpcMiddleware(ctx context.Context, middlewares []config.Middleware) grpc.ServerOption {
+	var streamServerInterceptors []grpc.StreamServerInterceptor
+
+	for _, mid := range middlewares {
+		middlewareName := mid.Name
+		streamServerInterceptor := middleware.NewGRPCMiddlewareWithType(ctx, mid.Config, mid.Type, middlewareName)
+		if streamServerInterceptor != nil {
+			streamServerInterceptors = append(streamServerInterceptors, streamServerInterceptor)
+		}
+	}
+
+	return grpc.ChainStreamInterceptor(streamServerInterceptors...)
 }

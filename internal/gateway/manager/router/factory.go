@@ -24,24 +24,31 @@ func NewRouterFactory(staticConfiguration config.Gateway, upstreamFactory *upstr
 }
 
 // CreateTCPRouters creates new TCPRouter.
-func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) *tcprouter.Router {
+func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) (*tcprouter.Router, *GrpcServer) {
 
+	// build http handler
 	handlersNonTLS := f.buildHttpHandlers(ctx, rtConf, false)
 	handlersTLS := f.buildHttpHandlers(ctx, rtConf, true)
 
 	router, err := tcprouter.NewRouter()
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
+	// add http handler to tcp mux
 	router.SetHTTPHandler(handlersNonTLS)
 	router.SetHTTPSHandler(handlersTLS, rtConf.TLSConfig.Config)
 
+	// build tcp handler
 	err = f.buildTCPHandlers(ctx, router, rtConf)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	return router
+
+	// build grpc handler && middleware
+	grpcServer := f.buildGrpcHandlers(ctx, rtConf)
+
+	return router, grpcServer
 }
 
 // CreateUDPHandlers creates new UDP Handlers.

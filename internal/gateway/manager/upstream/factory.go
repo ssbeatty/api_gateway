@@ -6,6 +6,7 @@ import (
 	"api_gateway/pkg/safe"
 	"api_gateway/pkg/tcp"
 	"context"
+	"google.golang.org/grpc"
 	"net/http"
 )
 
@@ -59,4 +60,14 @@ func (f *Factory) BuildTCPUpstreamHandler(ctx context.Context, upstreamConfig *c
 	}
 
 	return f.NewTcpLoadBalanceReverseProxy(ctx, lb), nil
+}
+
+func (f *Factory) BuildGRPCUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (grpc.StreamHandler, error) {
+	lb, err := f.buildUpstreamLoadBalancer(upstreamConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return f.NewGrpcLoadBalanceHandler(lb), nil
 }

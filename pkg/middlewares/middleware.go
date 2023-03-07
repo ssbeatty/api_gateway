@@ -5,6 +5,7 @@ import (
 	"api_gateway/pkg/middlewares/ipallowlist"
 	"api_gateway/pkg/tcp"
 	"context"
+	"google.golang.org/grpc"
 	"net/http"
 )
 
@@ -42,4 +43,13 @@ func NewTCPMiddlewareWithType(ctx context.Context, next tcp.Handler, cfg Middlew
 	}
 
 	return &defaultTCPtWrap{}, nil
+}
+
+func NewGRPCMiddlewareWithType(ctx context.Context, cfg MiddlewareCfg, mType, name string) grpc.StreamServerInterceptor {
+	switch mType {
+	case ipallowlist.TypeName:
+
+	}
+
+	return nil
 }

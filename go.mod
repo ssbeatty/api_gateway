@@ -7,7 +7,9 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/containous/alice v0.0.0-20181107144136-d83ebdd94cbd
 	github.com/containous/mux v0.0.0-20220627093034-b2dd784e613f
+	github.com/e421083458/grpc-proxy v0.2.0
 	github.com/miekg/dns v1.1.51
+	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/panjf2000/ants/v2 v2.7.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -17,14 +19,16 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/vulcand/predicate v1.2.0
 	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017
-	golang.org/x/net v0.7.0
-	golang.org/x/text v0.7.0
+	golang.org/x/net v0.8.0
+	golang.org/x/text v0.8.0
+	google.golang.org/grpc v1.53.0
 )
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gravitational/trace v1.1.16-0.20220114165159-14a9a7dd6aaf // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -42,10 +46,12 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/tools v0.3.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
+	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

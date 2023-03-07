@@ -32,6 +32,8 @@ type Router struct {
 	// httpsForwarder handles (indirectly through muxerHTTPS, or directly) all HTTPS requests.
 	httpsForwarder tcp.Handler
 
+	grpcForwarder tcp.Handler
+
 	// Neither is used directly, but they are held here, and recreated on config reload,
 	// so that they can be passed to the Switcher at the end of the config reload phase.
 	httpHandler  http.Handler
@@ -129,6 +131,11 @@ func (r *Router) ServeTCP(conn tcp.WriteCloser) {
 	if err != nil {
 		log.Error().Err(err).Msg("Error while reading TCP connection data")
 		conn.Close()
+		return
+	}
+
+	if r.grpcForwarder != nil {
+		r.grpcForwarder.ServeTCP(r.GetConn(conn, hello.peeked))
 		return
 	}
 
@@ -235,6 +242,11 @@ func (r *Router) GetHTTPSHandler() http.Handler {
 // SetHTTPForwarder sets the tcp handler that will forward the connections to an http handler.
 func (r *Router) SetHTTPForwarder(handler tcp.Handler) {
 	r.httpForwarder = handler
+}
+
+// SetGRPCForwarder sets the tcp handler that will forward the connections to an grpc handler.
+func (r *Router) SetGRPCForwarder(handler tcp.Handler) {
+	r.grpcForwarder = handler
 }
 
 // brokenTLSRouter is associated to a Host(SNI) rule for which we know the TLS conf is broken.

@@ -12,7 +12,6 @@ import (
 	"api_gateway/pkg/logs"
 	"api_gateway/pkg/safe"
 	"context"
-	"crypto/tls"
 	"os/signal"
 	"syscall"
 	"time"
@@ -44,59 +43,60 @@ func main() {
 		//	},
 		//}
 
-		crt, _ := tls.LoadX509KeyPair("demo.com.pem", "demo.com-key.pem")
+		//crt, _ := tls.LoadX509KeyPair("demo.com.pem", "demo.com-key.pem")
 
 		backend.ReloadConfig(dynamic.Message{
 			ProviderName: backend.Name(),
 			Configuration: map[string]config.Endpoint{
-				"tcp-1": {
-					Name:       "tcp-1",
-					ListenPort: 8080,
-					Type:       config.EndpointTypeTCP,
-					TLSConfig: config.TLS{
-						Config: &tls.Config{
-							Certificates: []tls.Certificate{crt},
-						},
-					},
-					Routers: []config.Router{
-						{
-							Host:       "*",
-							TlsEnabled: false,
-							Type:       config.RuleTypeTCP,
-							Upstream: config.Upstream{
-								Type: config.UpstreamTypeServer,
-								Paths: []string{
-									"127.0.0.1:8088",
-									"127.0.0.1:8089",
-								},
-								LoadBalancerType: loadbalancer.LbRoundRobin,
-							},
-							//Middlewares: []config.Middleware{
-							//	{
-							//		Name: "ip allow",
-							//		Type: ipallowlist.TypeName,
-							//		Config: &ipallowlist.TCPIPAllowList{
-							//			SourceRange: []string{
-							//				"192.168.50.102",
-							//			},
-							//		},
-							//	},
-							//},
-						},
-						{
-							Host:       "api.demo.com",
-							TlsEnabled: true,
-							Type:       config.RuleTypeTCP,
-							Upstream: config.Upstream{
-								Type: config.UpstreamTypeServer,
-								Paths: []string{
-									"api.demo.com:8443",
-								},
-								LoadBalancerType: loadbalancer.LbRoundRobin,
-							},
-						},
-					},
-				},
+				//"tcp-1": {
+				//	Name:       "tcp-1",
+				//	ListenPort: 8080,
+				//	Type:       config.EndpointTypeTCP,
+				//	TLSConfig: config.TLS{
+				//		Config: &tls.Config{
+				//			Certificates: []tls.Certificate{crt},
+				//		},
+				//	},
+				//	Routers: []config.Router{
+				//		{
+				//			Host:       "*",
+				//			TlsEnabled: false,
+				//			Type:       config.RuleTypeTCP,
+				//			Upstream: config.Upstream{
+				//				Type: config.UpstreamTypeServer,
+				//				Paths: []string{
+				//					"127.0.0.1:8088",
+				//					"127.0.0.1:8089",
+				//				},
+				//				LoadBalancerType: loadbalancer.LbRoundRobin,
+				//			},
+				//			//Middlewares: []config.Middleware{
+				//			//	{
+				//			//		Name: "ip allow",
+				//			//		Type: ipallowlist.TypeName,
+				//			//		Config: &ipallowlist.TCPIPAllowList{
+				//			//			SourceRange: []string{
+				//			//				"192.168.50.102",
+				//			//			},
+				//			//		},
+				//			//	},
+				//			//},
+				//		},
+				//		{
+				//			Host:       "api.demo.com",
+				//			TlsEnabled: true,
+				//			Type:       config.RuleTypeTCP,
+				//			Upstream: config.Upstream{
+				//				Type: config.UpstreamTypeServer,
+				//				Paths: []string{
+				//					"api.demo.com:8443",
+				//				},
+				//				LoadBalancerType: loadbalancer.LbRoundRobin,
+				//			},
+				//		},
+				//	},
+				//},
+
 				//"udp-1": {
 				//	Name:       "udp-1",
 				//	Type:       config.EndpointTypeUDP,
@@ -113,6 +113,25 @@ func main() {
 				//		},
 				//	},
 				//},
+
+				"tcp-1": {
+					Name:       "tcp-1",
+					ListenPort: 8080,
+					Type:       config.EndpointTypeTCP,
+					Routers: []config.Router{
+						{
+							TlsEnabled: false,
+							Type:       config.RuleTypeGRPC,
+							Upstream: config.Upstream{
+								Type: config.UpstreamTypeServer,
+								Paths: []string{
+									"127.0.0.1:50051",
+								},
+								LoadBalancerType: loadbalancer.LbRoundRobin,
+							},
+						},
+					},
+				},
 			},
 		})
 	})

@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"api_gateway/internal/gateway/config"
+	routerManager "api_gateway/internal/gateway/manager/router"
 	"api_gateway/internal/gateway/muxer/requestdecorator"
 	"api_gateway/internal/gateway/router"
 	tcprouter "api_gateway/internal/gateway/router/tcp"
@@ -62,6 +63,7 @@ type EndPoint struct {
 	tracker       *connectionTracker
 	httpServer    *httpServer
 	httpsServer   *httpServer
+	grpcServer    *routerManager.GrpcServer
 	pool          *safe.Pool
 	configuration *config.Endpoint
 }
@@ -211,7 +213,7 @@ func (e *EndPoint) Shutdown(ctx context.Context) {
 }
 
 // SwitchRouter switches the TCP router handler.
-func (e *EndPoint) SwitchRouter(rt *tcprouter.Router) {
+func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServer) {
 	rt.SetHTTPForwarder(e.httpServer.Forwarder)
 
 	httpHandler := rt.GetHTTPHandler()
@@ -231,6 +233,17 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router) {
 	e.httpsServer.Switcher.UpdateHandler(httpsHandler)
 
 	e.switcher.Switch(rt)
+	e.grpcServer = gs
+
+	if gs != nil {
+
+		gs.Forwarder = routerManager.NewGrpcForwarder(e.listener)
+		rt.SetGRPCForwarder(gs.Forwarder)
+		err := e.grpcServer.Server.Serve(gs.Forwarder)
+		if err != nil {
+			log.Error().Err(err).Send()
+		}
+	}
 
 }
 
