@@ -235,15 +235,25 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 	e.httpsServer.Switcher.UpdateHandler(httpsHandler)
 
 	e.switcher.Switch(rt)
+
+	if e.grpcServer != nil && e.grpcServer.Forwarder != nil {
+		// get ref
+		oldServer := e.grpcServer
+		e.pool.Go(func() {
+			oldServer.Server.Stop()
+		})
+		e.grpcServer.Forwarder.Error(grpc.ErrServerStopped)
+	}
+
 	e.grpcServer = gs
 
 	if gs != nil {
-		e.grpcServer.Forwarder.Error(grpc.ErrServerStopped)
-
 		gs.Forwarder = routerManager.NewGrpcForwarder(e.listener)
 		rt.SetGRPCForwarder(gs.Forwarder)
 
 		e.pool.Go(func() {
+			defer log.Debug().Msgf("Grpc Server Forwarder exit")
+
 			err := e.grpcServer.Server.Serve(gs.Forwarder)
 			if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 				log.Error().Err(err).Send()

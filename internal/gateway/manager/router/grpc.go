@@ -49,6 +49,11 @@ func (h *GrpcForwarder) Accept() (net.Conn, error) {
 	}
 }
 
+// Close do nothing be.
+func (h *GrpcForwarder) Close() error {
+	return nil
+}
+
 // Error to close listen
 func (h *GrpcForwarder) Error(err error) {
 	h.errChan <- err

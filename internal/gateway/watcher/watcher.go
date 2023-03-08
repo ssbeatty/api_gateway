@@ -20,7 +20,7 @@ func NewConfigurationWatcher(pool *safe.Pool) *ConfigurationWatcher {
 	return &ConfigurationWatcher{
 		allProvidersConfigs:    make(chan dynamic.Message, 100),
 		configurationListeners: make([]func(dynamic.Configuration), 0),
-		currentConfigs:         make(map[string]config.Endpoint),
+		currentConfigs:         make(map[string]dynamic.Message),
 		mu:                     &sync.Mutex{},
 		routinesPool:           pool,
 	}
@@ -31,7 +31,7 @@ type ConfigurationWatcher struct {
 	providers              []Provider
 	allProvidersConfigs    chan dynamic.Message
 	configurationListeners []func(dynamic.Configuration)
-	currentConfigs         map[string]config.Endpoint
+	currentConfigs         map[string]dynamic.Message
 
 	mu           *sync.Mutex
 	routinesPool *safe.Pool
@@ -72,9 +72,21 @@ func (c *ConfigurationWatcher) startProviderAggregator() {
 }
 
 func (c *ConfigurationWatcher) applyConfigurations(conf dynamic.Configuration) {
+	log.Debug().Interface("applyConfig", conf).Msg("Apply New Configuration")
+
 	for _, listener := range c.configurationListeners {
 		listener(conf)
 	}
+}
+
+func isExistedName(endpoints []config.Endpoint, name string) (config.Endpoint, bool) {
+	for _, endpoint := range endpoints {
+		if name == endpoint.Name {
+			return endpoint, true
+		}
+	}
+
+	return config.Endpoint{}, false
 }
 
 func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
@@ -87,7 +99,9 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 				return
 			}
 
-			if reflect.DeepEqual(c.currentConfigs, newConfig.Configuration) {
+			currentConfigs := c.currentConfigs[newConfig.ProviderName]
+
+			if reflect.DeepEqual(currentConfigs, newConfig) {
 				continue
 			}
 			c.mu.Lock()
@@ -95,8 +109,8 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 			log.Info().Msgf("Change new config from Provider: %s", newConfig.ProviderName)
 
 			newConfigs := newConfig.Configuration
-			for name, currentConfig := range c.currentConfigs {
-				if newOne, existed := newConfigs[name]; !existed {
+			for _, currentConfig := range currentConfigs.Configuration {
+				if newOne, existed := isExistedName(newConfigs, currentConfig.Name); !existed {
 					c.applyConfigurations(
 						dynamic.Configuration{
 							Action:   ActionDelete,
@@ -113,8 +127,8 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 						})
 				}
 			}
-			for name, newOne := range newConfigs {
-				if _, existed := c.currentConfigs[name]; !existed {
+			for _, newOne := range newConfigs {
+				if _, existed := isExistedName(currentConfigs.Configuration, newOne.Name); !existed {
 					c.applyConfigurations(
 						dynamic.Configuration{
 							Action:   ActionCreate,
@@ -123,7 +137,7 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 				}
 			}
 
-			c.currentConfigs = newConfig.Configuration
+			c.currentConfigs[newConfig.ProviderName] = newConfig
 
 			c.mu.Unlock()
 		}
