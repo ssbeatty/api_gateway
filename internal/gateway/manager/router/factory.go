@@ -53,7 +53,7 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 
 // CreateUDPHandlers creates new UDP Handlers.
 func (f *Factory) CreateUDPHandlers(ctx context.Context, rtConf *config.Endpoint) udp.Handler {
-	handlers := f.buildUDPHandlers(rtConf)
+	handlers := f.buildUDPHandlers(ctx, rtConf)
 	if len(handlers) > 0 {
 		return handlers[0]
 	}

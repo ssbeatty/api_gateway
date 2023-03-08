@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func (f *Factory) NewGrpcLoadBalanceHandler(lb loadbalancer.LoadBalance) grpc.StreamHandler {
+func (f *Factory) NewGrpcLoadBalanceHandler(ctx context.Context, lb loadbalancer.LoadBalance) grpc.StreamHandler {
 	return func() grpc.StreamHandler {
 		nextAddr, err := lb.Get("")
 		if err != nil {

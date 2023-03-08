@@ -5,6 +5,7 @@ import (
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
 	"api_gateway/pkg/safe"
 	"api_gateway/pkg/tcp"
+	"api_gateway/pkg/udp"
 	"context"
 	"google.golang.org/grpc"
 	"net/http"
@@ -69,5 +70,11 @@ func (f *Factory) BuildGRPCUpstreamHandler(ctx context.Context, upstreamConfig *
 		return nil, err
 	}
 
-	return f.NewGrpcLoadBalanceHandler(lb), nil
+	return f.NewGrpcLoadBalanceHandler(ctx, lb), nil
+}
+
+func (f *Factory) BuildUDPUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) udp.Handler {
+	lb := loadbalancer.LoadBalanceFactory(upstreamConfig.LoadBalancerType)
+
+	return f.NewUDPLoadBalanceReverseProxy(ctx, lb)
 }

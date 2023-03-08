@@ -95,15 +95,27 @@ func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalance
 	)
 	for item, w := range conf {
 		aList = append(aList, item)
-		if uri, err := url.Parse(item); err == nil && uri.Hostname() != "" && uri.Port() != "" {
-			host := fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())
+		if uri, err := url.Parse(item); err == nil && uri.Hostname() != "" {
+			var port string
+			if uri.Port() == "" && uri.Scheme == "https" {
+				port = "443"
+			} else if uri.Port() == "" && uri.Scheme == "http" {
+				port = "80"
+			} else {
+				port = uri.Port()
+			}
+			host := fmt.Sprintf("%s:%s", uri.Hostname(), port)
 			checkInfoCfg[item] = checkInfo{
 				Host:     host,
 				IpWeight: w,
 			}
 		} else {
+			host, port, err := net.SplitHostPort(item)
+			if err != nil {
+				return nil, err
+			}
 			checkInfoCfg[item] = checkInfo{
-				Host:     item,
+				Host:     fmt.Sprintf("%s:%s", host, port),
 				IpWeight: w,
 			}
 		}

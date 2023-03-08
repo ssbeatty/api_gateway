@@ -121,11 +121,12 @@ func main() {
 					Routers: []config.Router{
 						{
 							TlsEnabled: false,
-							Type:       config.RuleTypeGRPC,
+							Rule:       "PathPrefix(`/`)",
+							Type:       config.RuleTypeHTTP,
 							Upstream: config.Upstream{
-								Type: config.UpstreamTypeServer,
+								Type: config.UpstreamTypeURL,
 								Paths: []string{
-									"127.0.0.1:50051",
+									"http://192.168.50.102",
 								},
 								LoadBalancerType: loadbalancer.LbRoundRobin,
 							},

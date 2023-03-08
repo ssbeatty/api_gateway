@@ -24,7 +24,7 @@ func (r *RoundRobinBalance) Next() string {
 	if len(r.rss) == 0 {
 		return ""
 	}
-	lens := len(r.rss) //5
+	lens := len(r.rss)
 	if r.curIndex >= lens {
 		r.curIndex = 0
 	}

@@ -5,4 +5,5 @@ const (
 	MiddlewareName = "middlewareName"
 	MiddlewareType = "middlewareType"
 	EndpointName   = "endpointName"
+	RouterRule     = "RouterRule"
 )
