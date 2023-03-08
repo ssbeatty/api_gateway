@@ -3,6 +3,8 @@ package middlewares
 import (
 	"api_gateway/pkg/middlewares/addprefix"
 	"api_gateway/pkg/middlewares/auth"
+	"api_gateway/pkg/middlewares/grpc/grpcheaders"
+	"api_gateway/pkg/middlewares/grpc/grpcipallowlist"
 	"api_gateway/pkg/middlewares/headers"
 	httpIPAllow "api_gateway/pkg/middlewares/ipallowlist"
 	"api_gateway/pkg/middlewares/ratelimiter"
@@ -81,5 +83,11 @@ func NewTCPMiddlewareWithType(ctx context.Context, next tcp.Handler, cfg Middlew
 }
 
 func NewGRPCMiddlewareWithType(ctx context.Context, cfg MiddlewareCfg, mType, name string) grpc.StreamServerInterceptor {
+	switch mType {
+	case grpcheaders.TypeName:
+		return grpcheaders.New(ctx, cfg.(*grpcheaders.Headers), name)
+	case grpcipallowlist.TypeName:
+		return grpcipallowlist.New(ctx, cfg.(*grpcipallowlist.IPAllowList), name)
+	}
 	return nil
 }
