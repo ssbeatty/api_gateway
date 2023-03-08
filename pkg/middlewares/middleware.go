@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"api_gateway/pkg/middlewares/auth"
-	"api_gateway/pkg/middlewares/ipallowlist"
+	"api_gateway/pkg/middlewares/tcp/ipallowlist"
 	"api_gateway/pkg/tcp"
 	"context"
 	"google.golang.org/grpc"

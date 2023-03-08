@@ -9,7 +9,6 @@ import (
 
 // Proxy is a reverse-proxy implementation of the Handler interface.
 type Proxy struct {
-	// TODO: maybe optimize by pre-resolving it at proxy creation time
 	target string
 }
 

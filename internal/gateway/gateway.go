@@ -6,31 +6,18 @@ import (
 	"api_gateway/internal/gateway/endpoint/tcp"
 	"api_gateway/internal/gateway/endpoint/udp"
 	routerManager "api_gateway/internal/gateway/manager/router"
-	tcprouter "api_gateway/internal/gateway/router/tcp"
 	"api_gateway/internal/gateway/watcher"
 	"api_gateway/pkg/safe"
-	udpPkg "api_gateway/pkg/udp"
 	"context"
 	"github.com/rs/zerolog/log"
 )
 
-type TCPEndpoint interface {
-	Start(ctx context.Context)
-	Shutdown(ctx context.Context)
-	SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServer)
-}
-
-type UDPEndpoint interface {
-	Start(ctx context.Context)
-	Shutdown(ctx context.Context)
-	Switch(ut udpPkg.Handler)
-}
-
+// Server Gateway main server
 type Server struct {
 	watcher       *watcher.ConfigurationWatcher
 	routinesPool  *safe.Pool
-	tcpEndpoints  *safe.SyncMap[string, TCPEndpoint]
-	udpEndpoints  *safe.SyncMap[string, UDPEndpoint]
+	tcpEndpoints  *safe.SyncMap[string, *tcp.EndPoint]
+	udpEndpoints  *safe.SyncMap[string, *udp.EndPoint]
 	stopChan      chan struct{}
 	routerFactory *routerManager.Factory
 	gatewayConfig *config.Gateway
@@ -47,8 +34,8 @@ func NewServer(
 		watcher:       watcher,
 		routinesPool:  routinesPool,
 		stopChan:      make(chan struct{}, 1),
-		tcpEndpoints:  safe.NewSyncMap[string, TCPEndpoint](),
-		udpEndpoints:  safe.NewSyncMap[string, UDPEndpoint](),
+		tcpEndpoints:  safe.NewSyncMap[string, *tcp.EndPoint](),
+		udpEndpoints:  safe.NewSyncMap[string, *udp.EndPoint](),
 		routerFactory: routerFactory,
 		gatewayConfig: gatewayConfig,
 	}
@@ -77,12 +64,12 @@ func (s *Server) Wait() {
 func (s *Server) Stop(ctx context.Context) {
 	defer log.Info().Msg("Server stopped")
 
-	s.tcpEndpoints.Range(func(_ string, endpoint TCPEndpoint) bool {
+	s.tcpEndpoints.Range(func(_ string, endpoint *tcp.EndPoint) bool {
 		endpoint.Shutdown(ctx)
 
 		return true
 	})
-	s.udpEndpoints.Range(func(_ string, endpoint UDPEndpoint) bool {
+	s.udpEndpoints.Range(func(_ string, endpoint *udp.EndPoint) bool {
 		endpoint.Shutdown(ctx)
 
 		return true
@@ -145,13 +132,13 @@ func (s *Server) setupConfigWatcher(ctx context.Context) {
 	})
 }
 
-func (s *Server) switchTCPRouter(ctx context.Context, serverEntryPointsTCP TCPEndpoint, conf dynamic.Configuration) {
+func (s *Server) switchTCPRouter(ctx context.Context, serverEntryPointsTCP *tcp.EndPoint, conf dynamic.Configuration) {
 	routers, grpcServer := s.routerFactory.CreateTCPRouters(ctx, &conf.EndPoint)
 
 	serverEntryPointsTCP.SwitchRouter(routers, grpcServer)
 }
 
-func (s *Server) switchUDPRouter(ctx context.Context, serverEntryPointsUDP UDPEndpoint, conf dynamic.Configuration) {
+func (s *Server) switchUDPRouter(ctx context.Context, serverEntryPointsUDP *udp.EndPoint, conf dynamic.Configuration) {
 	handlers := s.routerFactory.CreateUDPHandlers(ctx, &conf.EndPoint)
 
 	serverEntryPointsUDP.Switch(handlers)

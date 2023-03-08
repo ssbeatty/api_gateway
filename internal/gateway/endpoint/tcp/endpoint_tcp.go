@@ -11,6 +11,7 @@ import (
 	"api_gateway/pkg/middlewares/forwardedheaders"
 	"api_gateway/pkg/safe"
 	"api_gateway/pkg/tcp"
+	"api_gateway/pkg/types"
 	"context"
 	"errors"
 	"fmt"
@@ -28,35 +29,6 @@ import (
 	"syscall"
 	"time"
 )
-
-type httpForwarder struct {
-	net.Listener
-	connChan chan net.Conn
-	errChan  chan error
-}
-
-func newHTTPForwarder(ln net.Listener) *httpForwarder {
-	return &httpForwarder{
-		Listener: ln,
-		connChan: make(chan net.Conn),
-		errChan:  make(chan error),
-	}
-}
-
-// ServeTCP uses the connection to serve it later in "Accept".
-func (h *httpForwarder) ServeTCP(conn tcp.WriteCloser) {
-	h.connChan <- conn
-}
-
-// Accept retrieves a served connection in ServeTCP.
-func (h *httpForwarder) Accept() (net.Conn, error) {
-	select {
-	case conn := <-h.connChan:
-		return conn, nil
-	case err := <-h.errChan:
-		return nil, err
-	}
-}
 
 type EndPoint struct {
 	listener      net.Listener
@@ -129,14 +101,14 @@ func (e *EndPoint) Start(ctx context.Context) {
 				continue
 			}
 
-			e.httpServer.Forwarder.errChan <- err
-			e.httpsServer.Forwarder.errChan <- err
+			e.httpServer.Forwarder.Error(err)
+			e.httpsServer.Forwarder.Error(err)
 			e.grpcServer.Forwarder.Error(err)
 
 			return
 		}
 
-		writeCloser, err := writeCloser(conn)
+		writeCloser, err := types.WriteCloser(conn)
 		if err != nil {
 			panic(err)
 		}
@@ -163,7 +135,7 @@ func (e *EndPoint) Shutdown(ctx context.Context) {
 
 	var wg sync.WaitGroup
 
-	shutdownServer := func(server stoppable) {
+	shutdownServer := func(server types.Stoppable) {
 		defer wg.Done()
 		err := server.Shutdown(ctx)
 		if err == nil {
@@ -236,6 +208,7 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 
 	e.switcher.Switch(rt)
 
+	// exit old grpcServer
 	if e.grpcServer != nil && e.grpcServer.Forwarder != nil {
 		// get ref
 		oldServer := e.grpcServer
@@ -263,30 +236,9 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 
 }
 
-// writeCloser returns the given connection, augmented with the WriteCloser
-// implementation, if any was found within the underlying conn.
-func writeCloser(conn net.Conn) (tcp.WriteCloser, error) {
-	switch typedConn := conn.(type) {
-	case *net.TCPConn:
-		return typedConn, nil
-	default:
-		return nil, fmt.Errorf("unknown connection type %T", typedConn)
-	}
-}
-
-type stoppable interface {
-	Shutdown(context.Context) error
-	Close() error
-}
-
-type stoppableServer interface {
-	stoppable
-	Serve(listener net.Listener) error
-}
-
 type httpServer struct {
-	Server    stoppableServer
-	Forwarder *httpForwarder
+	Server    types.StoppableServer
+	Forwarder *routerManager.HttpForwarder
 	Switcher  *HTTPHandlerSwitcher
 }
 
@@ -299,11 +251,7 @@ func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDec
 	}
 
 	var handler http.Handler
-	// todo
-	handler, err = forwardedheaders.NewXForwarded(
-		true,
-		nil,
-		next)
+	handler, err = forwardedheaders.NewXForwarded(true, nil, next)
 	if err != nil {
 		return nil, err
 	}
@@ -318,16 +266,15 @@ func createHTTPServer(ctx context.Context, ln net.Listener, withH2c bool, reqDec
 		})
 	}
 
-	// todo configs this
 	serverHTTP := &http.Server{
 		Handler:      handler,
 		ErrorLog:     stdlog.New(logs.NoLevel(log.Logger, zerolog.DebugLevel), "", 0),
-		ReadTimeout:  time.Second * 30,
-		WriteTimeout: time.Second * 30,
-		IdleTimeout:  time.Second * 30,
+		ReadTimeout:  config.DefaultConfig.Gateway.HTTPReadTimeOut,
+		WriteTimeout: config.DefaultConfig.Gateway.HTTPWriteTimeOut,
+		IdleTimeout:  config.DefaultConfig.Gateway.HTTPIdleTimeOut,
 	}
 
-	listener := newHTTPForwarder(ln)
+	listener := routerManager.NewHTTPForwarder(ln)
 	go func() {
 		err := serverHTTP.Serve(listener)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {

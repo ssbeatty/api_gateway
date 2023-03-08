@@ -1,4 +1,4 @@
-package provider
+package backend
 
 import (
 	"api_gateway/internal/gateway/dynamic"

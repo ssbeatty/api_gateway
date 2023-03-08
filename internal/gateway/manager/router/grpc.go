@@ -3,6 +3,7 @@ package router
 import (
 	"api_gateway/internal/gateway/config"
 	"api_gateway/pkg/tcp"
+	"api_gateway/pkg/types"
 	"context"
 	"github.com/e421083458/grpc-proxy/proxy"
 	"github.com/rs/zerolog/log"
@@ -10,13 +11,8 @@ import (
 	"net"
 )
 
-type grpcStop interface {
-	Stop()
-	Serve(listener net.Listener) error
-}
-
 type GrpcServer struct {
-	Server    grpcStop
+	Server    types.GrpcStop
 	Forwarder *GrpcForwarder
 }
 

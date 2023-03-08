@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	DefaultConfig = APP{}
+	DefaultConfig = NewAPP()
 )
 
 func SetupConfig() {
@@ -33,12 +33,39 @@ type APP struct {
 	Gateway Gateway `yaml:"gateway"`
 }
 
+func NewAPP() APP {
+	return APP{
+		Log:     newLog(),
+		Gateway: newGateway(),
+	}
+}
+
 type Log struct {
 	Level string `yaml:"level"`
 	Path  string `yaml:"path"`
 }
 
+func newLog() Log {
+	return Log{
+		Level: "info",
+		Path:  "stdout",
+	}
+}
+
 type Gateway struct {
 	GraceTimeOut     time.Duration `yaml:"graceTimeOut"`
 	ListenUDPTimeOut time.Duration `yaml:"listenUDPTimeOut"`
+	HTTPReadTimeOut  time.Duration `yaml:"httpReadTimeout"`
+	HTTPWriteTimeOut time.Duration `yaml:"httpWriteTimeout"`
+	HTTPIdleTimeOut  time.Duration `yaml:"httpIdleTimeout"`
+}
+
+func newGateway() Gateway {
+	return Gateway{
+		GraceTimeOut:     time.Nanosecond * 50,
+		ListenUDPTimeOut: time.Second * 30,
+		HTTPReadTimeOut:  time.Second * 30,
+		HTTPWriteTimeOut: time.Second * 30,
+		HTTPIdleTimeOut:  time.Second * 120,
+	}
 }

@@ -40,10 +40,7 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 	router.SetHTTPSHandler(handlersTLS, rtConf.TLSConfig.Config)
 
 	// build tcp handler
-	err = f.buildTCPHandlers(ctx, router, rtConf)
-	if err != nil {
-		return nil, nil
-	}
+	f.buildTCPHandlers(ctx, router, rtConf)
 
 	// build grpc handler && middleware
 	grpcServer := f.buildGrpcHandlers(ctx, rtConf)

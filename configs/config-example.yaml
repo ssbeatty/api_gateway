@@ -5,3 +5,7 @@ log:
 gateway:
   graceTimeOut: 50ns
   listenUDPTimeOut: 30s
+
+  httpReadTimeout: 30s
+  httpWriteTimeout: 30s
+  httpIdleTimeout: 120s

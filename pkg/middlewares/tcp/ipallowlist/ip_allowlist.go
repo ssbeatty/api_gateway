@@ -33,7 +33,7 @@ func (b *TCPIPAllowList) Validator() error {
 // New builds a new TCP IPAllowLister given a list of CIDR-Strings to allow.
 func New(ctx context.Context, next tcp.Handler, config *TCPIPAllowList, name string) (tcp.Handler, error) {
 	logger := logs.GetLogger(ctx, name, TypeName)
-	logger.Debug().Msg("Creating middleware")
+	logger.Debug().Msg("Creating middleware IPAllowListerTCP")
 
 	if len(config.SourceRange) == 0 {
 		return nil, errors.New("sourceRange is empty, IPAllowLister not created")

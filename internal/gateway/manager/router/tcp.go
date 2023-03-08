@@ -9,19 +9,19 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router, rtConf *config.Endpoint) error {
+func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router, rtConf *config.Endpoint) {
 	var (
 		sHandler tcp.Handler
 	)
 
 	for _, router := range rtConf.Routers {
+		if router.Type != config.RuleTypeTCP {
+			continue
+		}
 		chain := tcp.NewChain()
 		middleware := f.buildTCPMiddleware(ctx, router.Middlewares)
 
 		sHandler = f.buildTCPRouterHandlers(ctx, router)
-		if router.Type != config.RuleTypeTCP {
-			continue
-		}
 
 		then, err := chain.Extend(*middleware).Then(sHandler)
 		if err != nil {
@@ -45,7 +45,6 @@ func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router,
 		}
 	}
 
-	return nil
 }
 
 func (f *Factory) buildTCPRouterHandlers(ctx context.Context, rtConf config.Router) tcp.Handler {
