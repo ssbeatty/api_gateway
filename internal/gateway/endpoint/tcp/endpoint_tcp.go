@@ -19,6 +19,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 	stdlog "log"
 	"net"
 	"net/http"
@@ -130,6 +131,7 @@ func (e *EndPoint) Start(ctx context.Context) {
 
 			e.httpServer.Forwarder.errChan <- err
 			e.httpsServer.Forwarder.errChan <- err
+			e.grpcServer.Forwarder.Error(err)
 
 			return
 		}
@@ -236,13 +238,14 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 	e.grpcServer = gs
 
 	if gs != nil {
+		e.grpcServer.Forwarder.Error(grpc.ErrServerStopped)
 
 		gs.Forwarder = routerManager.NewGrpcForwarder(e.listener)
 		rt.SetGRPCForwarder(gs.Forwarder)
 
 		e.pool.Go(func() {
 			err := e.grpcServer.Server.Serve(gs.Forwarder)
-			if err != nil {
+			if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 				log.Error().Err(err).Send()
 			}
 		})

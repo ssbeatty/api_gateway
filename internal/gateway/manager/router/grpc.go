@@ -49,6 +49,11 @@ func (h *GrpcForwarder) Accept() (net.Conn, error) {
 	}
 }
 
+// Error to close listen
+func (h *GrpcForwarder) Error(err error) {
+	h.errChan <- err
+}
+
 func (f *Factory) buildGrpcHandlers(ctx context.Context, rtConf *config.Endpoint) *GrpcServer {
 
 	var grpcServers []*GrpcServer
