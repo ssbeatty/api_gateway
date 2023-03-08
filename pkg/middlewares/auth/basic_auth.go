@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	BasicTypeName = "BasicAuth"
-	defaultRealm  = "api-gateway"
+	TypeName     = "BasicAuth"
+	defaultRealm = "api-gateway"
 )
 
 type basicAuth struct {
@@ -29,14 +29,14 @@ type BasicAuth struct {
 	Users []string `json:"users,omitempty"`
 }
 
-func (b *BasicAuth) Validator() error {
+func (b *BasicAuth) Schema() (string, error) {
 
-	return nil
+	return "", nil
 }
 
 // NewBasic creates a basicAuth middleware.
 func NewBasic(ctx context.Context, next http.Handler, authConfig *BasicAuth, name string) (http.Handler, error) {
-	logs.GetLogger(ctx, name, BasicTypeName).Debug().Msg("Creating middleware")
+	logs.GetLogger(ctx, name, TypeName).Debug().Msg("Creating middleware")
 
 	users, err := getUsers(authConfig.Users, basicUserParser)
 	if err != nil {
@@ -58,7 +58,7 @@ func NewBasic(ctx context.Context, next http.Handler, authConfig *BasicAuth, nam
 }
 
 func (b *basicAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	logger := logs.GetLogger(req.Context(), b.name, BasicTypeName)
+	logger := logs.GetLogger(req.Context(), b.name, TypeName)
 
 	user, password, ok := req.BasicAuth()
 	if ok {

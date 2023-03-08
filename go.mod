@@ -17,10 +17,12 @@ require (
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
+	github.com/vulcand/oxy/v2 v2.0.0-20230227135449-a0e9f7ff1040
 	github.com/vulcand/predicate v1.2.0
 	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017
 	golang.org/x/net v0.8.0
 	golang.org/x/text v0.8.0
+	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.53.0
 )
 

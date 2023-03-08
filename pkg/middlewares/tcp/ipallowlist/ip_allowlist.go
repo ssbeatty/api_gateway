@@ -25,9 +25,9 @@ type TCPIPAllowList struct {
 	SourceRange []string `json:"sourceRange,omitempty"`
 }
 
-func (b *TCPIPAllowList) Validator() error {
+func (b *TCPIPAllowList) Schema() (string, error) {
 
-	return nil
+	return "", nil
 }
 
 // New builds a new TCP IPAllowLister given a list of CIDR-Strings to allow.
