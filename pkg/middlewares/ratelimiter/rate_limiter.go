@@ -2,6 +2,7 @@
 package ratelimiter
 
 import (
+	"api_gateway/pkg/middlewares/base"
 	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"fmt"
@@ -29,14 +30,10 @@ type rateLimiter struct {
 }
 
 type RateLimit struct {
+	base.Config
 	Average int `json:"average,omitempty"`
 	// Every Second rate
 	Period int `json:"period,omitempty"`
-}
-
-func (b *RateLimit) Schema() (string, error) {
-
-	return "", nil
 }
 
 func getClientIP(req *http.Request) string {

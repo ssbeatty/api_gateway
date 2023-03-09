@@ -10,6 +10,9 @@ func (f *Factory) buildUDPHandlers(ctx context.Context, rtConf *config.Endpoint)
 	var handlers []udp.Handler
 
 	for _, router := range rtConf.Routers {
+		if router.Type != config.RuleTypeUDP {
+			continue
+		}
 		loadBalancer := f.upstreamFactory.BuildUDPUpstreamHandler(ctx, &router.Upstream)
 		handlers = append(handlers, loadBalancer)
 	}

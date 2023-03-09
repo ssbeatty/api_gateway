@@ -18,8 +18,6 @@ type recovery struct {
 
 // New creates recovery middleware.
 func New(ctx context.Context, next http.Handler) (http.Handler, error) {
-	logs.GetLogger(ctx, middlewareName, typeName).Debug().Msg("Creating middleware")
-
 	return &recovery{
 		next: next,
 	}, nil

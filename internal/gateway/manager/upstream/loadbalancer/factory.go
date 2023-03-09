@@ -1,12 +1,12 @@
 package loadbalancer
 
-type LbType int
+type LbType string
 
 const (
-	LbRandom LbType = iota
-	LbRoundRobin
-	LbWeightRoundRobin
-	LbConsistentHash
+	LbRandom           LbType = "random"
+	LbRoundRobin       LbType = "robin"
+	LbWeightRoundRobin LbType = "weight_robin"
+	LbConsistentHash   LbType = "consistent_hash"
 )
 
 func LoadBalanceFactory(lbType LbType) LoadBalance {
@@ -20,7 +20,7 @@ func LoadBalanceFactory(lbType LbType) LoadBalance {
 	case LbWeightRoundRobin:
 		return &WeightRoundRobinBalance{}
 	default:
-		return &RandomBalance{}
+		return &RoundRobinBalance{}
 	}
 }
 
@@ -51,7 +51,7 @@ func LoadBalanceFactorWithConf(lbType LbType, mConf LoadBalanceConf) LoadBalance
 		lb.Update()
 		return lb
 	default:
-		lb := &RandomBalance{}
+		lb := &RoundRobinBalance{}
 		lb.SetConf(mConf)
 		mConf.Attach(lb)
 		lb.Update()

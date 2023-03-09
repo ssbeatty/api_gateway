@@ -18,6 +18,7 @@ import (
 	"api_gateway/pkg/middlewares/tcp/ipallowlist"
 	"api_gateway/pkg/tcp"
 	"context"
+	"encoding/json"
 	"google.golang.org/grpc"
 	"net/http"
 )
@@ -40,54 +41,132 @@ func (d defaultTCPtWrap) ServeTCP(conn tcp.WriteCloser) {
 
 }
 
-func NewHTTPMiddlewareWithType(ctx context.Context, next http.Handler, cfg MiddlewareCfg, mType, name string) (http.Handler, error) {
+func unmarshalAny[T any](cfg map[string]interface{}) (*T, error) {
+	marshal, err := json.Marshal(&cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	out := new(T)
+	if err := json.Unmarshal(marshal, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func NewHTTPMiddlewareWithType(ctx context.Context, next http.Handler, cfg map[string]interface{}, mType, name string) (http.Handler, error) {
+
 	switch mType {
 	case auth.TypeName:
-		return auth.NewBasic(ctx, next, cfg.(*auth.BasicAuth), name)
+		if c, e := unmarshalAny[auth.BasicAuth](cfg); e != nil {
+			return nil, e
+		} else {
+			return auth.NewBasic(ctx, next, c, name)
+		}
 	case addprefix.TypeName:
-		return addprefix.New(ctx, next, cfg.(*addprefix.AddPrefix), name)
+		if c, e := unmarshalAny[addprefix.AddPrefix](cfg); e != nil {
+			return nil, e
+		} else {
+			return addprefix.New(ctx, next, c, name)
+		}
 	case headers.TypeName:
-		return headers.NewHeader(next, cfg.(*headers.Headers), name)
+		if c, e := unmarshalAny[headers.Headers](cfg); e != nil {
+			return nil, e
+		} else {
+			return headers.NewHeader(next, c, name)
+		}
 	case httpIPAllow.TypeName:
-		return httpIPAllow.New(ctx, next, cfg.(*httpIPAllow.IPAllowList), name)
+		if c, e := unmarshalAny[httpIPAllow.IPAllowList](cfg); e != nil {
+			return nil, e
+		} else {
+			return httpIPAllow.New(ctx, next, c, name)
+		}
 	case ratelimiter.TypeName:
-		return ratelimiter.New(ctx, next, cfg.(*ratelimiter.RateLimit), name)
+		if c, e := unmarshalAny[ratelimiter.RateLimit](cfg); e != nil {
+			return nil, e
+		} else {
+			return ratelimiter.New(ctx, next, c, name)
+		}
 	case redirect.TypeSchemeName:
-		return redirect.NewRedirectScheme(ctx, next, cfg.(*redirect.Scheme), name)
+		if c, e := unmarshalAny[redirect.Scheme](cfg); e != nil {
+			return nil, e
+		} else {
+			return redirect.NewRedirectScheme(ctx, next, c, name)
+		}
 	case redirect.TypeRegexName:
-		return redirect.NewRedirectRegex(ctx, next, cfg.(*redirect.Regex), name)
+		if c, e := unmarshalAny[redirect.Regex](cfg); e != nil {
+			return nil, e
+		} else {
+			return redirect.NewRedirectRegex(ctx, next, c, name)
+		}
 	case replacepath.TypeName:
-		return replacepath.New(ctx, next, cfg.(*replacepath.ReplacePath), name)
+		if c, e := unmarshalAny[replacepath.ReplacePath](cfg); e != nil {
+			return nil, e
+		} else {
+			return replacepath.New(ctx, next, c, name)
+		}
 	case replacepathregex.TypeName:
-		return replacepathregex.New(ctx, next, cfg.(*replacepathregex.ReplacePathRegex), name)
+		if c, e := unmarshalAny[replacepathregex.ReplacePathRegex](cfg); e != nil {
+			return nil, e
+		} else {
+			return replacepathregex.New(ctx, next, c, name)
+		}
 	case retry.TypeName:
-		return retry.New(ctx, next, cfg.(*retry.Retry), retry.Listeners{}, name)
+		if c, e := unmarshalAny[retry.Retry](cfg); e != nil {
+			return nil, e
+		} else {
+			return retry.New(ctx, next, c, retry.Listeners{}, name)
+		}
 	case stripprefix.TypeName:
-		return stripprefix.New(ctx, next, cfg.(*stripprefix.StripPrefix), name)
+		if c, e := unmarshalAny[stripprefix.StripPrefix](cfg); e != nil {
+			return nil, e
+		} else {
+			return stripprefix.New(ctx, next, c, name)
+		}
 	case stripprefixregex.TypeName:
-		return stripprefixregex.New(ctx, next, cfg.(*stripprefixregex.StripPrefixRegex), name)
+		if c, e := unmarshalAny[stripprefixregex.StripPrefixRegex](cfg); e != nil {
+			return nil, e
+		} else {
+			return stripprefixregex.New(ctx, next, c, name)
+		}
 	}
 
 	return &defaultHTTPWrap{}, nil
 }
 
-func NewTCPMiddlewareWithType(ctx context.Context, next tcp.Handler, cfg MiddlewareCfg, mType, name string) (tcp.Handler, error) {
+func NewTCPMiddlewareWithType(ctx context.Context, next tcp.Handler, cfg map[string]interface{}, mType, name string) (tcp.Handler, error) {
 	switch mType {
 	case ipallowlist.TypeName:
-		return ipallowlist.New(ctx, next, cfg.(*ipallowlist.TCPIPAllowList), name)
+		if c, e := unmarshalAny[ipallowlist.TCPIPAllowList](cfg); e != nil {
+			return nil, e
+		} else {
+			return ipallowlist.New(ctx, next, c, name)
+		}
 	case inflightconn.TypeName:
-		return inflightconn.New(ctx, next, cfg.(*inflightconn.TCPInFlightConn), name)
+		if c, e := unmarshalAny[inflightconn.TCPInFlightConn](cfg); e != nil {
+			return nil, e
+		} else {
+			return inflightconn.New(ctx, next, c, name)
+		}
 	}
 
 	return &defaultTCPtWrap{}, nil
 }
 
-func NewGRPCMiddlewareWithType(ctx context.Context, cfg MiddlewareCfg, mType, name string) grpc.StreamServerInterceptor {
+func NewGRPCMiddlewareWithType(ctx context.Context, cfg map[string]interface{}, mType, name string) grpc.StreamServerInterceptor {
 	switch mType {
 	case grpcheaders.TypeName:
-		return grpcheaders.New(ctx, cfg.(*grpcheaders.Headers), name)
+		if c, e := unmarshalAny[grpcheaders.Headers](cfg); e != nil {
+			return nil
+		} else {
+			return grpcheaders.New(ctx, c, name)
+		}
 	case grpcipallowlist.TypeName:
-		return grpcipallowlist.New(ctx, cfg.(*grpcipallowlist.IPAllowList), name)
+		if c, e := unmarshalAny[grpcipallowlist.IPAllowList](cfg); e != nil {
+			return nil
+		} else {
+			return grpcipallowlist.New(ctx, c, name)
+		}
 	}
 	return nil
 }

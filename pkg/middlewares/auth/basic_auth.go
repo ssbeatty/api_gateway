@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"api_gateway/pkg/middlewares/base"
 	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"fmt"
@@ -26,12 +27,8 @@ type basicAuth struct {
 }
 
 type BasicAuth struct {
+	base.Config
 	Users []string `json:"users,omitempty"`
-}
-
-func (b *BasicAuth) Schema() (string, error) {
-
-	return "", nil
 }
 
 // NewBasic creates a basicAuth middleware.

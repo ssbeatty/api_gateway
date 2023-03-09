@@ -2,6 +2,7 @@ package ipallowlist
 
 import (
 	"api_gateway/pkg/ip"
+	"api_gateway/pkg/middlewares/base"
 	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"errors"
@@ -23,12 +24,8 @@ type ipAllowLister struct {
 	name        string
 }
 
-func (b *IPAllowList) Schema() (string, error) {
-
-	return "", nil
-}
-
 type IPAllowList struct {
+	base.Config
 	// SourceRange defines the set of allowed IPs (or ranges of allowed IPs by using CIDR notation).
 	SourceRange []string `json:"sourceRange,omitempty"`
 }

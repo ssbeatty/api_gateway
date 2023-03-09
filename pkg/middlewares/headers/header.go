@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"api_gateway/pkg/middlewares/base"
 	"api_gateway/pkg/middlewares/logs"
 	"net/http"
 	"strings"
@@ -21,13 +22,9 @@ type Header struct {
 }
 
 type Headers struct {
+	base.Config
 	CustomRequestHeaders  map[string]string `json:"customRequestHeaders,omitempty"`
 	CustomResponseHeaders map[string]string `json:"customResponseHeaders,omitempty"`
-}
-
-func (b *Headers) Schema() (string, error) {
-
-	return "", nil
 }
 
 // NewHeader constructs a new header instance from supplied frontend header struct.

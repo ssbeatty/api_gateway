@@ -1,6 +1,7 @@
 package addprefix
 
 import (
+	"api_gateway/pkg/middlewares/base"
 	"api_gateway/pkg/middlewares/logs"
 	"context"
 	"fmt"
@@ -19,14 +20,10 @@ type addPrefix struct {
 }
 
 type AddPrefix struct {
+	base.Config
 	// Prefix is the string to add before the current path in the requested URL.
 	// It should include a leading slash (/).
 	Prefix string `json:"prefix,omitempty"`
-}
-
-func (b *AddPrefix) Schema() (string, error) {
-
-	return "", nil
 }
 
 // New creates a new handler.

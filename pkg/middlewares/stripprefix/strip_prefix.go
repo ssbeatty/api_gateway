@@ -11,6 +11,7 @@ const (
 	// ForwardedPrefixHeader is the default header to set prefix.
 	ForwardedPrefixHeader = "X-Forwarded-Prefix"
 	TypeName              = "StripPrefix"
+	prefixField           = "prefixPath"
 )
 
 // stripPrefix is a middleware used to strip prefix from an URL request.
@@ -32,7 +33,7 @@ func (b *StripPrefix) Schema() (string, error) {
 
 // New creates a new strip prefix middleware.
 func New(ctx context.Context, next http.Handler, config *StripPrefix, name string) (http.Handler, error) {
-	logs.GetLogger(ctx, name, TypeName).Debug().Msg("Creating middleware")
+	logs.GetLogger(ctx, name, TypeName).Debug().Strs(prefixField, config.Prefixes).Msg("Creating middleware")
 	return &stripPrefix{
 		prefixes: config.Prefixes,
 		next:     next,

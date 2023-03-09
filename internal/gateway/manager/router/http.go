@@ -54,11 +54,12 @@ func getRouters(rtConf *config.Endpoint, tls bool) []config.Router {
 		notlsRouters []config.Router
 	)
 	for _, router := range rtConf.Routers {
-		if router.TlsEnabled {
+		if router.TlsEnabled && router.Type == config.RuleTypeHTTPS {
 			tlsRouters = append(tlsRouters, router)
 			continue
+		} else if router.Type == config.RuleTypeHTTP {
+			notlsRouters = append(notlsRouters, router)
 		}
-		notlsRouters = append(notlsRouters, router)
 	}
 
 	if tls {
@@ -77,9 +78,6 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 	}
 
 	for _, router := range getRouters(rtConf, tls) {
-		if router.Type != config.RuleTypeHTTP {
-			continue
-		}
 		// create every rule middleware for everyone http handler
 		// example /handler1 has auth middleware but /handler2 not
 		middleware := f.buildHttpMiddleware(ctx, router.Middlewares)

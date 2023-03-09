@@ -2,7 +2,6 @@ package config
 
 import (
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
-	middleware "api_gateway/pkg/middlewares"
 	"crypto/tls"
 	"fmt"
 )
@@ -74,10 +73,10 @@ type Upstream struct {
 }
 
 // Middleware name and config use interface
-// 4 layer middleware example tcp or udp
+// 4 layer middleware example tcp
 // 7 layer middleware example http or https or grpc
 type Middleware struct {
-	Name   string                   `yaml:"name" mapstructure:"name"`
-	Type   string                   `yaml:"type" mapstructure:"type"`
-	Config middleware.MiddlewareCfg `yaml:"config" mapstructure:"config"`
+	Name   string                 `yaml:"name" mapstructure:"name"`
+	Type   string                 `yaml:"type" mapstructure:"type"`
+	Config map[string]interface{} `yaml:"config" mapstructure:"config"`
 }
