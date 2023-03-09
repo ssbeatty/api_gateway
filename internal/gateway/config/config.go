@@ -2,7 +2,6 @@ package config
 
 import (
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
-	"crypto/tls"
 	"fmt"
 )
 
@@ -19,8 +18,8 @@ const (
 	UpstreamTypeSTATIC UpstreamType = "static"
 	UpstreamTypeServer UpstreamType = "server"
 
-	TLSTypeBytes TLSType = 0
-	TLSTypePath  TLSType = 1
+	TLSTypeBytes TLSType = "bytes"
+	TLSTypePath  TLSType = "file"
 )
 
 // EndpointType
@@ -36,7 +35,7 @@ type RuleType string
 type UpstreamType string
 
 // TLSType bytes || path
-type TLSType int
+type TLSType string
 
 // Endpoint Every Endpoint provide a port
 type Endpoint struct {
@@ -67,11 +66,11 @@ type Router struct {
 
 // TLS config
 type TLS struct {
-	Type       TLSType            `yaml:"type" mapstructure:"type"`
-	CsrFile    string             `yaml:"csr_file" mapstructure:"csr_file"`
-	KeyFile    string             `yaml:"key_file" mapstructure:"key_file"`
-	CaFiles    []string           `yaml:"ca_files" mapstructure:"ca_files"`
-	ClientAuth tls.ClientAuthType `yaml:"client_auth" mapstructure:"client_auth"`
+	Type       TLSType  `yaml:"type" mapstructure:"type"`
+	CsrFile    string   `yaml:"csr_file" mapstructure:"csr_file"`
+	KeyFile    string   `yaml:"key_file" mapstructure:"key_file"`
+	CaFiles    []string `yaml:"ca_files" mapstructure:"ca_files"`
+	ClientAuth string   `yaml:"client_auth" mapstructure:"client_auth"`
 }
 
 // Upstream can be file path, url or server with port

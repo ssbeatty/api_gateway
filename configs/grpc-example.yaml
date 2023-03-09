@@ -12,7 +12,7 @@ endpoints:
             - 127.0.0.1:50051
           load_balance: robin
         tls_config:
-          type: 1
+          type: file
           csr_file: demo.com.pem
           key_file: demo.com-key.pem
-          client_auth: 0
+          client_auth: NoClientCert

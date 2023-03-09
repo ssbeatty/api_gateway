@@ -33,12 +33,25 @@ func generateTLSConfig(cfg *config.TLS) (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	tlsConfig := &tls.Config{
-		ClientAuth: cfg.ClientAuth,
 		Certificates: []tls.Certificate{
 			*crt,
 		},
 	}
+	switch cfg.ClientAuth {
+	case "RequestClientCert":
+		tlsConfig.ClientAuth = tls.RequestClientCert
+	case "RequireAnyClientCert":
+		tlsConfig.ClientAuth = tls.RequireAnyClientCert
+	case "VerifyClientCertIfGiven":
+		tlsConfig.ClientAuth = tls.VerifyClientCertIfGiven
+	case "RequireAndVerifyClientCert":
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	default:
+		tlsConfig.ClientAuth = tls.NoClientCert
+	}
+
 	if len(cfg.CaFiles) > 0 {
 		pool := x509.NewCertPool()
 		for _, caFile := range cfg.CaFiles {
