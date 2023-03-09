@@ -6,6 +6,7 @@ import (
 	tcprouter "api_gateway/internal/gateway/router/tcp"
 	"api_gateway/pkg/udp"
 	"context"
+	"crypto/tls"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,7 +26,12 @@ func NewRouterFactory(staticConfiguration config.Gateway, upstreamFactory *upstr
 }
 
 // CreateTCPRouters creates new TCPRouter.
-func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) (*tcprouter.Router, *GrpcServer) {
+func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) (*tcprouter.Router, *GrpcServer, *GrpcServer) {
+
+	var (
+		httpTLSConfig *tls.Config
+		err           error
+	)
 
 	// build http handler
 	handlersNonTLS := f.buildHttpHandlers(ctx, rtConf, false)
@@ -33,12 +39,14 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 
 	router, err := tcprouter.NewRouter()
 	if err != nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	httpTLSConfig, err := f.generateHTTPSConfig(rtConf)
-	if err != nil {
-		log.Error().Err(err).Msg("Error generate https certs")
+	if len(getHTTPRouters(rtConf, true)) > 0 {
+		httpTLSConfig, err = f.generateHTTPSConfig(rtConf)
+		if err != nil {
+			log.Debug().Err(err).Msg("Error generate https certs")
+		}
 	}
 
 	// add http handler to tcp mux
@@ -49,9 +57,10 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 	f.buildTCPHandlers(ctx, router, rtConf)
 
 	// build grpc handler && middleware
-	grpcServer := f.buildGrpcHandlers(ctx, rtConf)
+	grpcServer := f.buildGrpcHandlers(ctx, rtConf, false)
+	grpcTLSServer := f.buildGrpcHandlers(ctx, rtConf, true)
 
-	return router, grpcServer
+	return router, grpcServer, grpcTLSServer
 }
 
 // CreateUDPHandlers creates new UDP Handlers.

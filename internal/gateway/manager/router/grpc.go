@@ -8,6 +8,7 @@ import (
 	"github.com/e421083458/grpc-proxy/proxy"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"net"
 )
 
@@ -55,14 +56,37 @@ func (h *GrpcForwarder) Error(err error) {
 	h.errChan <- err
 }
 
-func (f *Factory) buildGrpcHandlers(ctx context.Context, rtConf *config.Endpoint) *GrpcServer {
-
-	var grpcServers []*GrpcServer
-
+func getGrpcRouters(rtConf *config.Endpoint, tls bool) []config.Router {
+	var (
+		tlsRouters   []config.Router
+		notlsRouters []config.Router
+	)
 	for _, router := range rtConf.Routers {
-		if router.Type != config.RuleTypeGRPC {
+		if router.TlsEnabled && router.Type == config.RuleTypeGRPC {
+			tlsRouters = append(tlsRouters, router)
 			continue
+		} else if router.Type == config.RuleTypeGRPC {
+			notlsRouters = append(notlsRouters, router)
 		}
+	}
+
+	if tls {
+		return tlsRouters
+	}
+
+	return notlsRouters
+}
+
+func (f *Factory) buildGrpcHandlers(ctx context.Context, rtConf *config.Endpoint, tls bool) *GrpcServer {
+
+	var (
+		grpcServers []*GrpcServer
+	)
+
+	for _, router := range getGrpcRouters(rtConf, tls) {
+		var (
+			s *grpc.Server
+		)
 
 		grpcHandler, err := f.upstreamFactory.BuildGRPCUpstreamHandler(ctx, &router.Upstream)
 		if err != nil {
@@ -71,11 +95,26 @@ func (f *Factory) buildGrpcHandlers(ctx context.Context, rtConf *config.Endpoint
 		}
 
 		middlewares := f.buildGrpcMiddleware(ctx, router.Middlewares)
-		s := grpc.NewServer(
-			middlewares,
-			grpc.CustomCodec(proxy.Codec()),
-			grpc.UnknownServiceHandler(grpcHandler),
-		)
+
+		if tls {
+			tlsConfig, err := generateTLSConfig(&router.TLSConfig)
+			if err != nil {
+				log.Error().Err(err).Msg("Generate tls config")
+			}
+			c := credentials.NewTLS(tlsConfig)
+			s = grpc.NewServer(
+				middlewares,
+				grpc.Creds(c),
+				grpc.CustomCodec(proxy.Codec()),
+				grpc.UnknownServiceHandler(grpcHandler),
+			)
+		} else {
+			s = grpc.NewServer(
+				middlewares,
+				grpc.CustomCodec(proxy.Codec()),
+				grpc.UnknownServiceHandler(grpcHandler),
+			)
+		}
 
 		grpcServers = append(grpcServers, &GrpcServer{
 			Server: s,

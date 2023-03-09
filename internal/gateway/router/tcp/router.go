@@ -34,6 +34,8 @@ type Router struct {
 
 	grpcForwarder tcp.Handler
 
+	grpcTLSForwarder tcp.Handler
+
 	// Neither is used directly, but they are held here, and recreated on config reload,
 	// so that they can be passed to the Switcher at the end of the config reload phase.
 	httpHandler  http.Handler
@@ -134,16 +136,13 @@ func (r *Router) ServeTCP(conn tcp.WriteCloser) {
 		return
 	}
 
-	if r.grpcForwarder != nil {
-		r.grpcForwarder.ServeTCP(r.GetConn(conn, hello.peeked))
-		return
-	}
-
 	if !hello.isTLS {
 		handler, _ := r.muxerTCP.Match(connData)
 		switch {
 		case handler != nil:
 			handler.ServeTCP(r.GetConn(conn, hello.peeked))
+		case r.grpcForwarder != nil:
+			r.grpcForwarder.ServeTCP(r.GetConn(conn, hello.peeked))
 		case r.httpForwarder != nil:
 			r.httpForwarder.ServeTCP(r.GetConn(conn, hello.peeked))
 		default:
@@ -170,6 +169,11 @@ func (r *Router) ServeTCP(conn tcp.WriteCloser) {
 	handlerTCPTLS, catchAllTCPTLS := r.muxerTCPTLS.Match(connData)
 	if handlerTCPTLS != nil && !catchAllTCPTLS {
 		handlerTCPTLS.ServeTCP(r.GetConn(conn, hello.peeked))
+		return
+	}
+
+	if r.grpcTLSForwarder != nil {
+		r.grpcTLSForwarder.ServeTCP(r.GetConn(conn, hello.peeked))
 		return
 	}
 
@@ -247,6 +251,11 @@ func (r *Router) SetHTTPForwarder(handler tcp.Handler) {
 // SetGRPCForwarder sets the tcp handler that will forward the connections to an grpc handler.
 func (r *Router) SetGRPCForwarder(handler tcp.Handler) {
 	r.grpcForwarder = handler
+}
+
+// SetGRPCTLSForwarder sets the tcp handler that will forward the connections to an tls grpc handler.
+func (r *Router) SetGRPCTLSForwarder(handler tcp.Handler) {
+	r.grpcTLSForwarder = handler
 }
 
 // brokenTLSRouter is associated to a Host(SNI) rule for which we know the TLS conf is broken.

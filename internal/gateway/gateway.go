@@ -133,9 +133,9 @@ func (s *Server) setupConfigWatcher(ctx context.Context) {
 }
 
 func (s *Server) switchTCPRouter(ctx context.Context, serverEntryPointsTCP *tcp.EndPoint, conf dynamic.Configuration) {
-	routers, grpcServer := s.routerFactory.CreateTCPRouters(ctx, &conf.EndPoint)
+	routers, grpcServer, grpcTLSServer := s.routerFactory.CreateTCPRouters(ctx, &conf.EndPoint)
 
-	serverEntryPointsTCP.SwitchRouter(routers, grpcServer)
+	serverEntryPointsTCP.SwitchRouter(routers, grpcServer, grpcTLSServer)
 }
 
 func (s *Server) switchUDPRouter(ctx context.Context, serverEntryPointsUDP *udp.EndPoint, conf dynamic.Configuration) {

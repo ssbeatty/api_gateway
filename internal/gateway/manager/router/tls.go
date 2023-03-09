@@ -60,7 +60,7 @@ func (f *Factory) generateHTTPSConfig(rtConf *config.Endpoint) (*tls.Config, err
 	)
 	tlsCfgs := make(map[string]config.TLS)
 
-	for _, router := range getRouters(rtConf, true) {
+	for _, router := range getHTTPRouters(rtConf, true) {
 		once.Do(func() {
 			firstUseful = router.TLSConfig
 		})

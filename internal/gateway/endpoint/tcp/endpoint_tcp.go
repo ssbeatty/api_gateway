@@ -37,6 +37,7 @@ type EndPoint struct {
 	httpServer    *httpServer
 	httpsServer   *httpServer
 	grpcServer    *routerManager.GrpcServer
+	grpcTLSServer *routerManager.GrpcServer
 	pool          *safe.Pool
 	configuration *config.Endpoint
 }
@@ -103,7 +104,12 @@ func (e *EndPoint) Start(ctx context.Context) {
 
 			e.httpServer.Forwarder.Error(err)
 			e.httpsServer.Forwarder.Error(err)
-			e.grpcServer.Forwarder.Error(err)
+			if e.grpcServer != nil && e.grpcServer.Forwarder != nil {
+				e.grpcServer.Forwarder.Error(err)
+			}
+			if e.grpcTLSServer != nil && e.grpcTLSServer.Forwarder != nil {
+				e.grpcTLSServer.Forwarder.Error(err)
+			}
 
 			return
 		}
@@ -187,7 +193,7 @@ func (e *EndPoint) Shutdown(ctx context.Context) {
 }
 
 // SwitchRouter switches the TCP router handler.
-func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServer) {
+func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServer, gsTLS *routerManager.GrpcServer) {
 	rt.SetHTTPForwarder(e.httpServer.Forwarder)
 
 	httpHandler := rt.GetHTTPHandler()
@@ -217,8 +223,17 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 		})
 		e.grpcServer.Forwarder.Error(grpc.ErrServerStopped)
 	}
+	if e.grpcTLSServer != nil && e.grpcTLSServer.Forwarder != nil {
+		// get ref
+		oldServer := e.grpcTLSServer
+		e.pool.Go(func() {
+			oldServer.Server.Stop()
+		})
+		e.grpcTLSServer.Forwarder.Error(grpc.ErrServerStopped)
+	}
 
 	e.grpcServer = gs
+	e.grpcTLSServer = gsTLS
 
 	if gs != nil {
 		gs.Forwarder = routerManager.NewGrpcForwarder(e.listener)
@@ -228,6 +243,20 @@ func (e *EndPoint) SwitchRouter(rt *tcprouter.Router, gs *routerManager.GrpcServ
 			defer log.Debug().Msgf("Grpc Server Forwarder exit")
 
 			err := e.grpcServer.Server.Serve(gs.Forwarder)
+			if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+				log.Error().Err(err).Send()
+			}
+		})
+	}
+
+	if gsTLS != nil {
+		gsTLS.Forwarder = routerManager.NewGrpcForwarder(e.listener)
+		rt.SetGRPCTLSForwarder(gsTLS.Forwarder)
+
+		e.pool.Go(func() {
+			defer log.Debug().Msgf("Grpc Server Forwarder exit")
+
+			err := e.grpcTLSServer.Server.Serve(gsTLS.Forwarder)
 			if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 				log.Error().Err(err).Send()
 			}

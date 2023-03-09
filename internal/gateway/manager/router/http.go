@@ -48,7 +48,7 @@ func (h *HttpForwarder) Error(err error) {
 	h.errChan <- err
 }
 
-func getRouters(rtConf *config.Endpoint, tls bool) []config.Router {
+func getHTTPRouters(rtConf *config.Endpoint, tls bool) []config.Router {
 	var (
 		tlsRouters   []config.Router
 		notlsRouters []config.Router
@@ -77,7 +77,7 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 		return nil
 	}
 
-	for _, router := range getRouters(rtConf, tls) {
+	for _, router := range getHTTPRouters(rtConf, tls) {
 		// create every rule middleware for everyone http handler
 		// example /handler1 has auth middleware but /handler2 not
 		middleware := f.buildHttpMiddleware(ctx, router.Middlewares)
