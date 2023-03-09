@@ -1,0 +1,32 @@
+endpoints:
+  - name: tcp-1
+    listen_port: 8080
+    type: tcp
+    routers:
+      - type: http
+        tls_enabled: true
+        host: www.demo.com
+        rule: PathPrefix(`/`)
+        upstream:
+          type: url
+          paths:
+            - http://192.168.50.102:81
+          load_balance: robin
+        tls_config:
+          type: 1
+          csr_file: demo.com.pem
+          key_file: demo.com-key.pem
+          client_auth: 0
+      - type: tcp
+        tls_enabled: true
+        host: www.demo.com
+        upstream:
+          type: serve
+          paths:
+            - 127.0.0.1:8443
+          load_balance: robin
+        tls_config:
+          type: 1
+          csr_file: demo.com.pem
+          key_file: demo.com-key.pem
+          client_auth: 4

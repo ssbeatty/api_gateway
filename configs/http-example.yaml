@@ -4,11 +4,10 @@ endpoints:
     type: tcp
     routers:
       - type: http
-        tls_enabled: false
-        priority: 1
+        tls_enabled: true
         rule: PathPrefix(`/`)
         upstream:
           type: url
           paths:
             - http://192.168.50.102:81
-          load_balance: 0
+          load_balance: robin

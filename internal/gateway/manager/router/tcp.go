@@ -29,9 +29,15 @@ func (f *Factory) buildTCPHandlers(ctx context.Context, route *tcprouter.Router,
 			continue
 		}
 		if router.TlsEnabled {
+			tlsConfig, parseErr := generateTLSConfig(&router.TLSConfig)
+			if parseErr != nil {
+				log.Error().Err(parseErr).Msg("Error when parse tls config")
+				continue
+			}
+
 			handler := &tcp.TLSHandler{
 				Next:   then,
-				Config: rtConf.TLSConfig.Config,
+				Config: tlsConfig,
 			}
 			err := route.AddTLSRoute(fmt.Sprintf("HostSNI(`%s`)", router.Host), 0, handler)
 			if err != nil {

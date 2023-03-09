@@ -54,7 +54,7 @@ func getRouters(rtConf *config.Endpoint, tls bool) []config.Router {
 		notlsRouters []config.Router
 	)
 	for _, router := range rtConf.Routers {
-		if router.TlsEnabled && router.Type == config.RuleTypeHTTPS {
+		if router.TlsEnabled && router.Type == config.RuleTypeHTTP {
 			tlsRouters = append(tlsRouters, router)
 			continue
 		} else if router.Type == config.RuleTypeHTTP {

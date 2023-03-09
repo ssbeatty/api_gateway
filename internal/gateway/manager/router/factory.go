@@ -6,6 +6,7 @@ import (
 	tcprouter "api_gateway/internal/gateway/router/tcp"
 	"api_gateway/pkg/udp"
 	"context"
+	"github.com/rs/zerolog/log"
 )
 
 // Factory the factory of TCP/UDP routers.
@@ -35,9 +36,14 @@ func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint)
 		return nil, nil
 	}
 
+	httpTLSConfig, err := f.generateHTTPSConfig(rtConf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error generate https certs")
+	}
+
 	// add http handler to tcp mux
 	router.SetHTTPHandler(handlersNonTLS)
-	router.SetHTTPSHandler(handlersTLS, rtConf.TLSConfig.Config)
+	router.SetHTTPSHandler(handlersTLS, httpTLSConfig)
 
 	// build tcp handler
 	f.buildTCPHandlers(ctx, router, rtConf)
