@@ -43,12 +43,12 @@ func (c *ConfigurationWatcher) Start() {
 	c.startProviderAggregator()
 }
 
-func (c *ConfigurationWatcher) AddProvider(p Provider) {
+func (c *ConfigurationWatcher) AddProvider(p ...Provider) {
 	if c.providers == nil {
 		c.providers = make([]Provider, 0)
 	}
 
-	c.providers = append(c.providers, p)
+	c.providers = append(c.providers, p...)
 }
 
 // AddListener adds a new listener function used when new configuration is provided.
@@ -60,8 +60,13 @@ func (c *ConfigurationWatcher) AddListener(listener func(dynamic.Configuration))
 }
 
 func (c *ConfigurationWatcher) startProviderAggregator() {
-	for _, provider := range c.providers {
+	for idx := range c.providers {
+		provider := c.providers[idx]
 		c.routinesPool.Go(func() {
+			if err := provider.Init(); err != nil {
+				log.Error().Err(err).Msgf("Error when init provider %s", provider.Name())
+				return
+			}
 			log.Info().Msgf("Starting provider %s", provider.Name())
 			err := provider.Provide(c.allProvidersConfigs, c.routinesPool)
 			if err != nil {

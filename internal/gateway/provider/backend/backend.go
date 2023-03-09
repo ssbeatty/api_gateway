@@ -7,7 +7,7 @@ import (
 
 func NewBackend() *Backend {
 	return &Backend{
-		applyMessage: make(chan dynamic.Message, 100),
+		applyMessage: make(chan dynamic.Message, 10),
 	}
 }
 

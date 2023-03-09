@@ -36,11 +36,11 @@ type UpstreamType string
 
 // Endpoint Every Endpoint provide a port
 type Endpoint struct {
-	Name       string       `yaml:"name"`
-	ListenPort int          `yaml:"listen_port"`
-	Type       EndpointType `yaml:"type"`
-	Routers    []Router     `yaml:"routers"`
-	TLSConfig  TLS          `yaml:"tls_config"`
+	Name       string       `yaml:"name" mapstructure:"name"`
+	ListenPort int          `yaml:"listen_port" mapstructure:"listen_port"`
+	Type       EndpointType `yaml:"type" mapstructure:"type"`
+	Routers    []Router     `yaml:"routers" mapstructure:"routers"`
+	TLSConfig  TLS          `yaml:"tls_config" mapstructure:"tls_config"`
 }
 
 func (e *Endpoint) GetAddress() string {
@@ -51,13 +51,13 @@ func (e *Endpoint) GetAddress() string {
 // if not tls enable Host default *
 // else got a 4 layer host info use tls
 type Router struct {
-	Rule        string       `yaml:"rule"`
-	Host        string       `yaml:"host"`
-	TlsEnabled  bool         `yaml:"tls_enabled"`
-	Type        RuleType     `yaml:"type"`
-	Priority    int          `yaml:"priority"`
-	Middlewares []Middleware `yaml:"middlewares"`
-	Upstream    Upstream     `yaml:"upstream"`
+	Rule        string       `yaml:"rule" mapstructure:"rule"`
+	Host        string       `yaml:"host" mapstructure:"host"`
+	TlsEnabled  bool         `yaml:"tls_enabled" mapstructure:"tls_enabled"`
+	Type        RuleType     `yaml:"type" mapstructure:"type"`
+	Priority    int          `yaml:"priority" mapstructure:"priority"`
+	Middlewares []Middleware `yaml:"middlewares" mapstructure:"middlewares"`
+	Upstream    Upstream     `yaml:"upstream" mapstructure:"upstream"`
 }
 
 // TLS config
@@ -67,17 +67,17 @@ type TLS struct {
 
 // Upstream can be file path, url or server with port
 type Upstream struct {
-	Type             UpstreamType `yaml:"type"`
-	Paths            []string
-	Weights          []int
-	LoadBalancerType loadbalancer.LbType
+	Type             UpstreamType        `yaml:"type" mapstructure:"type"`
+	Paths            []string            `yaml:"paths" mapstructure:"paths"`
+	Weights          []int               `yaml:"weights" mapstructure:"weights"`
+	LoadBalancerType loadbalancer.LbType `yaml:"load_balance" mapstructure:"load_balance"`
 }
 
 // Middleware name and config use interface
 // 4 layer middleware example tcp or udp
 // 7 layer middleware example http or https or grpc
 type Middleware struct {
-	Name   string
-	Type   string
-	Config middleware.MiddlewareCfg
+	Name   string                   `yaml:"name" mapstructure:"name"`
+	Type   string                   `yaml:"type" mapstructure:"type"`
+	Config middleware.MiddlewareCfg `yaml:"config" mapstructure:"config"`
 }

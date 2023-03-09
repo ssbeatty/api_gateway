@@ -16,4 +16,5 @@ plugins-local/
 traefik_changelog.md
 integration/tailscale.secret
 config.yaml
+endpoints.yaml
 *.pem
