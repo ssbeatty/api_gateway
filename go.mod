@@ -9,6 +9,7 @@ require (
 	github.com/containous/mux v0.0.0-20220627093034-b2dd784e613f
 	github.com/e421083458/grpc-proxy v0.2.0
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/gorilla/handlers v1.5.1
 	github.com/miekg/dns v1.1.51
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -30,6 +31,7 @@ require (
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gravitational/trace v1.1.16-0.20220114165159-14a9a7dd6aaf // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

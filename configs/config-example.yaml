@@ -1,6 +1,9 @@
 log:
   level: debug
   path: stdout
+  access_log:
+    enable: true
+    httpLogPath: /path/http_access.log
 
 gateway:
   graceTimeOut: 50ns

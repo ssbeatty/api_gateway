@@ -4,6 +4,7 @@ import (
 	"api_gateway/internal/gateway/config"
 	httpmuxer "api_gateway/internal/gateway/muxer/http"
 	"api_gateway/pkg/logs"
+	"api_gateway/pkg/middlewares/accesslog"
 	"api_gateway/pkg/middlewares/recovery"
 	"api_gateway/pkg/tcp"
 	"context"
@@ -105,6 +106,13 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 	chain = chain.Append(func(next http.Handler) (http.Handler, error) {
 		return recovery.New(ctx, next)
 	})
+
+	accessConfig := config.DefaultConfig.Log.AccessLog
+	if accessConfig.Enable {
+		chain = chain.Append(func(next http.Handler) (http.Handler, error) {
+			return accesslog.NewHandler(accessConfig, next)
+		})
+	}
 
 	newChain, err := chain.Then(muxer)
 	if err != nil {

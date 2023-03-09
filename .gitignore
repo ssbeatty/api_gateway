@@ -18,3 +18,4 @@ integration/tailscale.secret
 config.yaml
 endpoints.yaml
 *.pem
+logs
