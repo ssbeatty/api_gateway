@@ -78,7 +78,7 @@ func (rl *rateLimiter) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	limiter := rl.rate.GetLimiter(getClientIP(req))
 
 	if !limiter.Allow() {
-		rl.serveDelayError(ctx, rw, time.Second)
+		rl.serveDelayError(ctx, rw, limiter.Reserve().Delay())
 		return
 	}
 
