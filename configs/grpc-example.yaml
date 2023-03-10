@@ -7,7 +7,7 @@ endpoints:
         tls_enabled: true
         host: www.demo.com
         upstream:
-          type: serve
+          type: server
           paths:
             - 127.0.0.1:50051
           load_balance: robin
