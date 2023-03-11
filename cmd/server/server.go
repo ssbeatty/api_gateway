@@ -1,6 +1,7 @@
 package main
 
 import (
+	bk "api_gateway/internal/backend"
 	"api_gateway/internal/gateway"
 	"api_gateway/internal/gateway/config"
 	routerManager "api_gateway/internal/gateway/manager/router"
@@ -8,6 +9,7 @@ import (
 	backendProvider "api_gateway/internal/gateway/provider/backend"
 	fileProvider "api_gateway/internal/gateway/provider/file"
 	"api_gateway/internal/gateway/watcher"
+	"api_gateway/internal/models"
 	"api_gateway/pkg/logs"
 	"api_gateway/pkg/safe"
 	"context"
@@ -24,6 +26,14 @@ func main() {
 
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	routinesPool := safe.NewPool(ctx, -1)
+
+	webConfig := config.DefaultConfig.WebServer
+	bk.Serve(webConfig)
+	dbConfig := config.DefaultConfig.DB
+	err := models.InitModels(dbConfig, ctx)
+	if err != nil {
+
+	}
 
 	// backend provider
 	backend := backendProvider.NewBackend()
