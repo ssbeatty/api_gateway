@@ -5,18 +5,16 @@
 
 ## 环境
 ### 虚拟机和测试机信息
-3台腾讯云标准S6服务器，配置信息如下
+4台腾讯云标准S6服务器，配置信息如下
 
 - 8 GB RAM
 - 4 CPU Cores
 - 50 GB SSD
 - Ubuntu 22.04 LTS 64-bit
-- 带宽 20M
 
-测试电脑
-- windows10 wsl
-- 16 CPU Cores
-- 32 GB RAM
+其中一台作为gateway, 两台作为后端分别为whoami1, whoami2
+
+最后一台作为测试机器
 
 ### 测试工具
 1. 使用[wrk](https://github.com/wg/wrk)进行基准测试
@@ -25,16 +23,16 @@
 4. nginx版本为: nginx/1.18.0 (Ubuntu)
 
 ### 通讯方式
-- gateway和whami vms通过腾讯云内网IP通讯
-- 测试机和gateway通过公网IP通讯
+vms之间全部通过腾讯云内网IP通讯, 腾讯控制台指明了内网带宽为6GBPS
 
 ### 测试命令
+在测试vm上执行
 ```shell
 wrk -t20 -c1000 -d60s --latency  http://{gatewayIP}:8001/bench
 ```
 
 ## 配置
-网关服务器
+4台服务器上执行如下命令
 ```shell
 sysctl -w fs.file-max="9999999"
 sysctl -w fs.nr_open="9999999"
@@ -169,10 +167,12 @@ services:
       rule = "PathPrefix(`/`)"
       service = "whoami-service"
       entryPoints = ["web"]
-
+  [http.serversTransports.mytransport]
+    maxIdleConnsPerHost = 100000
 
   [http.services]
     [http.services.whoami-service.loadBalancer]
+    serversTransport = "mytransport"
       [[http.services.whoami-service.loadBalancer.servers]]
         url = "http://{whami1IP}:8000"
       [[http.services.whoami-service.loadBalancer.servers]]
@@ -209,65 +209,63 @@ endpoints:
             - http://{whami1IP}:8000/
             - http://{whami2IP}:8000/
           load_balance: robin
+          maxIdleConnsPerHost: 100000
 ```
 
 
 ## 测试结果
 ```text
-wrk -t20 -c1000 -d60s --latency  http://43.137.1.29:8001/bench
-Running 1m test @ http://43.137.1.29:8001/bench
+wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8001/bench
+Running 1m test @ http://10.206.16.10:8001/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   126.55ms  283.35ms   2.00s    88.98%
-    Req/Sec   179.00    114.49     1.49k    74.47%
+    Latency     6.81ms    3.66ms  52.36ms   70.19%
+    Req/Sec     7.42k     1.72k   33.90k    64.32%
   Latency Distribution
-     50%   11.48ms
-     75%   22.19ms
-     90%  447.44ms
-     99%    1.55s
-  212250 requests in 1.00m, 28.54MB read
-  Socket errors: connect 0, read 0, write 0, timeout 2152
-Requests/sec:   3531.62
-Transfer/sec:    486.29KB
+     50%    6.80ms
+     75%   10.08ms
+     90%   10.56ms
+     99%   14.40ms
+  8864116 requests in 1.00m, 1.16GB read
+Requests/sec: 147491.13
+Transfer/sec:     19.83MB
 
 
-
-wrk -t20 -c1000 -d60s --latency  http://43.137.1.29:8002/bench
-Running 1m test @ http://43.137.1.29:8002/bench
+wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8002/bench
+Running 1m test @ http://10.206.16.10:8002/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   126.63ms  281.33ms   2.00s    89.03%
-    Req/Sec   181.74    112.39     1.38k    73.25%
+    Latency    28.98ms    7.55ms 236.87ms   82.26%
+    Req/Sec     1.74k   144.00     3.52k    75.11%
   Latency Distribution
-     50%   11.67ms
-     75%   36.88ms
-     90%  447.70ms
-     99%    1.55s
-  215431 requests in 1.00m, 20.96MB read
-  Socket errors: connect 0, read 0, write 0, timeout 1972
-Requests/sec:   3585.38
-Transfer/sec:    357.14KB
+     50%   28.41ms
+     75%   31.92ms
+     90%   35.82ms
+     99%   50.51ms
+  2081968 requests in 1.00m, 202.52MB read
+Requests/sec:  34647.36
+Transfer/sec:      3.37MB
 
 
-wrk -t20 -c1000 -d60s --latency  http://43.137.1.29:8003/bench
-Running 1m test @ http://43.137.1.29:8003/bench
+wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8003/bench
+Running 1m test @ http://10.206.16.10:8003/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   126.83ms  281.49ms   2.00s    89.01%
-    Req/Sec   181.23    110.40     1.08k    70.75%
+    Latency    21.66ms    5.42ms 196.03ms   84.43%
+    Req/Sec     2.33k   183.95     7.83k    83.10%
   Latency Distribution
-     50%   11.48ms
-     75%   30.65ms
-     90%  447.82ms
-     99%    1.54s
-  215319 requests in 1.00m, 20.95MB read
-  Socket errors: connect 0, read 1, write 0, timeout 2175
-Requests/sec:   3584.76
-Transfer/sec:    357.08KB
+     50%   21.38ms
+     75%   23.80ms
+     90%   26.17ms
+     99%   36.40ms
+  2783878 requests in 1.00m, 270.80MB read
+Requests/sec:  46329.19
+Transfer/sec:      4.51MB
 ```
 
 ## 结论
-从上面测试结果可以看到基本上与traefik的请求数持平，api_gateway的性能可以保障。
+从上面测试结果可以看到nginx的性能领先非常多基本上是traefik和api_gateway的4-5倍，但是仍然在一个数量级
 
+当前api_gateway的性能实际上比traefik还要高一些，当然可能是测试方法或者配置的问题，而且traefik的功能相对更加强大。
 
-> 也可能是网关没有达到对应的瓶颈。 之后会使用内网vm继续测试。
+总体来说api_gateway的性能是可以保障的。
