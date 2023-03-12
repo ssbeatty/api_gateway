@@ -83,7 +83,7 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 		// example /handler1 has auth middleware but /handler2 not
 		middleware := f.buildHttpMiddleware(ctx, router.Middlewares)
 
-		handler, buildErr := f.buildHttpRouter(router)
+		handler, buildErr := f.buildHttpRouter(ctx, router)
 		if buildErr != nil {
 			logger.Error().Msgf("Build http router error, %v", buildErr)
 			continue
@@ -122,13 +122,13 @@ func (f *Factory) buildHttpHandlers(ctx context.Context, rtConf *config.Endpoint
 	return newChain
 }
 
-func (f *Factory) buildHttpRouter(rule config.Router) (http.Handler, error) {
+func (f *Factory) buildHttpRouter(ctx context.Context, rule config.Router) (http.Handler, error) {
 	if len(rule.Upstream.Paths) == 0 {
 		return nil, errors.New("Empty Services!")
 	}
 	switch rule.Upstream.Type {
 	case config.UpstreamTypeURL:
-		return f.upstreamFactory.BuildHttpUpstreamHandler(&rule.Upstream)
+		return f.upstreamFactory.BuildHttpUpstreamHandler(ctx, &rule.Upstream)
 	case config.UpstreamTypeSTATIC:
 		// todo only one path
 		return http.FileServer(http.Dir(rule.Upstream.Paths[0])), nil

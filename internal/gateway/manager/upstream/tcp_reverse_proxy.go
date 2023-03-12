@@ -15,8 +15,8 @@ func (f *Factory) NewTcpLoadBalanceReverseProxy(ctx context.Context, lb loadbala
 
 		return &TcpReverseProxy{
 			ctx:             ctx,
-			KeepAlivePeriod: time.Second,
-			DialTimeout:     time.Second,
+			KeepAlivePeriod: 10 * time.Second,
+			DialTimeout:     30 * time.Second,
 			lb:              lb,
 		}
 	}()

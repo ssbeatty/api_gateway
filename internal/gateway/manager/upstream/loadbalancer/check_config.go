@@ -99,7 +99,7 @@ func (s *LoadBalanceCheckConf) UpdateConf(conf []string) {
 	s.s.UpdateConf(conf)
 }
 
-func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalanceCheckConf, error) {
+func NewLoadBalanceCheckConf(ctx context.Context, conf map[string]int, pool *safe.Pool) (*LoadBalanceCheckConf, error) {
 
 	lc, err := newLoadBalanceCheckConf(conf)
 
@@ -111,7 +111,9 @@ func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalance
 		s: lc,
 	}
 
-	pool.GoCtx(mConf.WatchConf)
+	pool.Go(func() {
+		mConf.WatchConf(ctx)
+	})
 
 	runtime.SetFinalizer(mConf, func(mConf *LoadBalanceCheckConf) {
 		mConf.s.closer <- struct{}{}
