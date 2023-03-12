@@ -1,8 +1,8 @@
 package backend
 
 import (
+	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/web"
-	"api_gateway/internal/gateway/config"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"

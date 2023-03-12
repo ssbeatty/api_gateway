@@ -1,8 +1,8 @@
 package web
 
 import (
+	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/payload"
-	"api_gateway/internal/gateway/config"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"

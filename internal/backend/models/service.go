@@ -1,8 +1,8 @@
 package models
 
 import (
-	"api_gateway/internal/gateway/config"
-	"api_gateway/internal/utils"
+	"api_gateway/internal/backend/config"
+	"api_gateway/internal/backend/utils"
 	"context"
 	"database/sql"
 	"errors"
