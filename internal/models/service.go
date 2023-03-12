@@ -7,9 +7,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/glebarez/sqlite"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/ssbeatty/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -62,12 +62,6 @@ func createDB(driver, user, pass, dsn, dbName string) error {
 		if err != nil {
 			return err
 		}
-		defer func(d *sql.DB) {
-			err := d.Close()
-			if err != nil {
-
-			}
-		}(d)
 
 		_, err = d.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s CHARACTER SET utf8 COLLATE utf8_general_ci;", dbName))
 		if err != nil {
@@ -85,12 +79,6 @@ func createDB(driver, user, pass, dsn, dbName string) error {
 		if err != nil {
 			return err
 		}
-		defer func(d *sql.DB) {
-			err := d.Close()
-			if err != nil {
-
-			}
-		}(d)
 
 		_, err = d.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
 		if err != nil {
@@ -108,8 +96,7 @@ func InitModels(config config.DB, ctx context.Context) error {
 
 	dataPath = config.DataPath
 	logger = log.Ctx(ctx)
-	logger.Info().Msg("I have to go...")
-	logger.Info().Msg("Stopping server gracefully")
+	logger.Info().Msg("Backend model init.")
 	newLogger := gormLogger.New(
 		logger,
 		gormLogger.Config{
