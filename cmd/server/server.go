@@ -23,7 +23,7 @@ func main() {
 	logs.SetupLogger(logConfiguration.Level, logConfiguration.Path)
 
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	routinesPool := safe.NewPool(ctx, 10000)
+	routinesPool := safe.NewPool(ctx, -1)
 
 	// backend provider
 	backend := backendProvider.NewBackend()

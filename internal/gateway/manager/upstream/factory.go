@@ -50,7 +50,7 @@ func (f *Factory) BuildHttpUpstreamHandler(upstreamConfig *config.Upstream) (htt
 		return nil, err
 	}
 
-	return f.NewLoadBalanceReverseProxy(lb), nil
+	return f.NewLoadBalanceReverseProxy(lb, upstreamConfig), nil
 }
 
 func (f *Factory) BuildTCPUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (tcp.Handler, error) {

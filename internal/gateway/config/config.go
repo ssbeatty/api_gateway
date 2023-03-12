@@ -75,10 +75,11 @@ type TLS struct {
 
 // Upstream can be file path, url or server with port
 type Upstream struct {
-	Type             UpstreamType        `yaml:"type" mapstructure:"type"`
-	Paths            []string            `yaml:"paths" mapstructure:"paths"`
-	Weights          []int               `yaml:"weights" mapstructure:"weights"`
-	LoadBalancerType loadbalancer.LbType `yaml:"load_balance" mapstructure:"load_balance"`
+	Type                UpstreamType        `yaml:"type" mapstructure:"type"`
+	Paths               []string            `yaml:"paths" mapstructure:"paths"`
+	Weights             []int               `yaml:"weights" mapstructure:"weights"`
+	LoadBalancerType    loadbalancer.LbType `yaml:"load_balance" mapstructure:"load_balance"`
+	MaxIdleConnsPerHost int                 `yaml:"maxIdleConnsPerHost" mapstructure:"maxIdleConnsPerHost"`
 }
 
 // Middleware name and config use interface

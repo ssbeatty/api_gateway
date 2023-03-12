@@ -1,15 +1,19 @@
 package upstream
 
 import (
+	"api_gateway/internal/gateway/config"
 	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
+	"api_gateway/pkg/buffer"
 	"github.com/rs/zerolog/log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 )
 
-func (f *Factory) NewLoadBalanceReverseProxy(lb loadbalancer.LoadBalance) *httputil.ReverseProxy {
+func (f *Factory) NewLoadBalanceReverseProxy(lb loadbalancer.LoadBalance, upstream *config.Upstream) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		nextAddr, err := lb.Get(req.URL.String())
 		if err != nil || nextAddr == "" {
@@ -35,9 +39,25 @@ func (f *Factory) NewLoadBalanceReverseProxy(lb loadbalancer.LoadBalance) *httpu
 			req.Header.Set("User-Agent", "")
 		}
 	}
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
 
 	return &httputil.ReverseProxy{
-		Director: director,
+		Director:      director,
+		FlushInterval: 100 * time.Millisecond,
+		BufferPool:    buffer.NewBufferPool(),
+		Transport: &http.Transport{
+			DialContext:           dialer.DialContext,
+			Proxy:                 http.ProxyFromEnvironment,
+			MaxIdleConnsPerHost:   upstream.MaxIdleConnsPerHost,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			ReadBufferSize:        64 * 1024,
+			WriteBufferSize:       64 * 1024,
+		},
 		ErrorHandler: func(writer http.ResponseWriter, request *http.Request, err error) {
 			http.NotFoundHandler().ServeHTTP(writer, request)
 			log.Error().Msgf("Reverse Proxy Error: %v", err)
