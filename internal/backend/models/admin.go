@@ -1,6 +1,8 @@
 package models
 
 import (
+	"api_gateway/internal/backend/payload"
+	"api_gateway/internal/backend/utils"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"time"
@@ -91,4 +93,33 @@ func ComparePasswords(dbPassword, password string) bool {
 		return false
 	}
 	return true
+}
+
+func OauthLoginPassword(req payload.OauthLoginPasswordReq) (payload.OauthSuccessData, error) {
+	var OauthSuccessData payload.OauthSuccessData
+	admin, err := GetAdminById(req.Id)
+	if err != nil {
+		return OauthSuccessData, err
+	}
+	hash, err := PasswordHash(req.Password)
+	if err != nil {
+		return OauthSuccessData, err
+	}
+	if hash != admin.Password {
+		return OauthSuccessData, err
+	}
+	return setLoginJwtToken(req.Id, admin.Username)
+}
+
+func setLoginJwtToken(userId int, userName string) (payload.OauthSuccessData, error) {
+	var OauthSuccessData payload.OauthSuccessData
+	token, exp, err := utils.GenerateToken(userId, userName)
+	if err != nil {
+		return OauthSuccessData, err
+	}
+	OauthSuccessData.Id = userId
+	OauthSuccessData.UserName = userName
+	OauthSuccessData.Toke = token
+	OauthSuccessData.TokenExpireAt = utils.TimeStandardFormat(time.Unix(exp, 0), false)
+	return OauthSuccessData, nil
 }

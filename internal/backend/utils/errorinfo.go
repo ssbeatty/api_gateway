@@ -4,6 +4,11 @@ import (
 	"fmt"
 )
 
+const (
+	StandardFormat = "2006-01-02 15:04:05"
+	PreciseFormat  = "2006-01-02 15:04:05.000"
+)
+
 type AppError struct {
 	Code    int32
 	Message string
