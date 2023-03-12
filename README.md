@@ -12,6 +12,9 @@
 ## 说明
 目前项目仍在积极开发中。
 
+### 相关文档
+[benchmark](./docs/benchmark.md)
+
 ### 项目分为两个子项目
 #### gateway
 网关主体项目
