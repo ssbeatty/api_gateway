@@ -64,6 +64,8 @@ func InitRouter(s *web.Service) *web.Service {
 	// restapi
 	apiV1 := r.Group("/api/v1")
 	{
+		apiV1.POST("/oauth/register/admin", Handle(s.RegisterAdmin))
+		apiV1.POST("/oauth/register/tenant", Handle(s.RegisterTenant))
 		apiV1.POST("/oauth/login/password", Handle(s.GetVersion))
 		// version
 		apiV1.GET("/version", Handle(s.GetVersion))

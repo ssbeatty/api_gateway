@@ -1,6 +1,7 @@
 package models
 
 import (
+	"api_gateway/internal/backend/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm/clause"
 	"time"
@@ -8,12 +9,13 @@ import (
 
 // Tenant 租户
 type Tenant struct {
-	Id              int       `json:"id"`
-	Username        string    `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"` // 用户名
-	Password        string    `gorm:"column:password;size:255;not null;default:''" json:"password"`                                 // 密码
-	RequestQuantity string    `gorm:"column:create_at" json:"request_quantity"`
-	UpdateTime      time.Time `gorm:"column:update_at" description:"update_time" json:"update_at"`
-	CreatTime       time.Time `gorm:"column:create_at" description:"creat_time" json:"create_at"`
+	Id              int    `json:"id"`
+	Username        string `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"` // 用户名
+	Password        string `gorm:"column:password;size:255;not null;default:''" json:"password"`                                 // 密码
+	RequestQuantity string `gorm:"column:create_at" json:"request_quantity"`
+	Token           string `gorm:"column:token" json:"token"`
+	UpdateTime      string `gorm:"column:update_time" description:"update_time" json:"update_time"`
+	CreatTime       string `gorm:"column:create_time" description:"creat_time" json:"create_time"`
 }
 
 func (t *Tenant) TableName() string {
@@ -28,8 +30,8 @@ func InsertTenant(name string, ps string) (*Tenant, error) {
 	tenant := Tenant{
 		Username:   name,
 		Password:   pass,
-		UpdateTime: time.Now(),
-		CreatTime:  time.Now(),
+		UpdateTime: time.Now().Format(utils.StandardFormat),
+		CreatTime:  time.Now().Format(utils.StandardFormat),
 	}
 	err = db.Create(&tenant).Error
 	if err != nil {
@@ -38,7 +40,7 @@ func InsertTenant(name string, ps string) (*Tenant, error) {
 	return &tenant, nil
 }
 
-func UpdateTenant(id int, Username string, Password string) (*Tenant, error) {
+func UpdateTenant(id int, Username string, Password string, token, RequestQuantity string) (*Tenant, error) {
 	tenant := Tenant{Id: id}
 	err := db.Where("id = ?", id).First(&tenant).Error
 	if err != nil {
@@ -54,7 +56,15 @@ func UpdateTenant(id int, Username string, Password string) (*Tenant, error) {
 			return nil, err
 		}
 	}
-	tenant.UpdateTime = time.Now()
+
+	if token != "" {
+		tenant.Token = token
+	}
+	if RequestQuantity != "" {
+		tenant.RequestQuantity = RequestQuantity
+	}
+
+	tenant.UpdateTime = time.Now().Format(utils.StandardFormat)
 	if err := db.Save(&tenant).Error; err != nil {
 		log.Error().AnErr("update admin info failed", err)
 	}

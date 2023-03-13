@@ -108,10 +108,10 @@ func OauthLoginPassword(req payload.OauthLoginPasswordReq) (payload.OauthSuccess
 	if hash != admin.Password {
 		return OauthSuccessData, err
 	}
-	return setLoginJwtToken(req.Id, admin.Username)
+	return SetLoginJwtToken(req.Id, admin.Username)
 }
 
-func setLoginJwtToken(userId int, userName string) (payload.OauthSuccessData, error) {
+func SetLoginJwtToken(userId int, userName string) (payload.OauthSuccessData, error) {
 	var OauthSuccessData payload.OauthSuccessData
 	token, exp, err := utils.GenerateToken(userId, userName)
 	if err != nil {

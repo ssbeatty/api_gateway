@@ -1,14 +1,17 @@
 package models
 
-import "time"
+import (
+	"api_gateway/internal/backend/utils"
+	"time"
+)
 
 type EndPoint struct {
-	Id         int       `json:"id"`
-	Name       string    `gorm:"column:endpoint_name;type:varchar(64);not null;default:''" json:"name"`
-	Type       string    `gorm:"column:type;size:64;not null;default:''" json:"type"`
-	Routers    []Router  `gorm:"foreignKey:EndPointID" json:"routers"`
-	UpdateTime time.Time `gorm:"column:update_time" description:"update_time" json:"update_time"`
-	CreatTime  time.Time `gorm:"column:creat_time" description:"creat_time" json:"creat_time"`
+	Id         int      `json:"id"`
+	Name       string   `gorm:"column:endpoint_name;type:varchar(64);not null;default:''" json:"name"`
+	Type       string   `gorm:"column:type;size:64;not null;default:''" json:"type"`
+	Routers    []Router `gorm:"foreignKey:EndPointID" json:"routers"`
+	UpdateTime string   `gorm:"column:update_time" description:"update_time" json:"update_time"`
+	CreatTime  string   `gorm:"column:creat_time" description:"creat_time" json:"creat_time"`
 }
 
 func (t *EndPoint) TableName() string {
@@ -30,8 +33,8 @@ func InsertEndPoint(name string, tp string, routers []int) (*EndPoint, error) {
 		Name:       name,
 		Type:       tp,
 		Routers:    rs,
-		CreatTime:  time.Now(),
-		UpdateTime: time.Now(),
+		CreatTime:  time.Now().Format(utils.StandardFormat),
+		UpdateTime: time.Now().Format(utils.StandardFormat),
 	}
 	err := db.Create(&endPoint).Error
 	if err != nil {
@@ -97,7 +100,7 @@ func UpDataEndPoint(id int, name string, tp string, routers []int) (*EndPoint, e
 	if tp != "" {
 		endPoint.Type = tp
 	}
-	endPoint.UpdateTime = time.Now()
+	endPoint.UpdateTime = time.Now().Format(utils.StandardFormat)
 	return &endPoint, nil
 }
 
