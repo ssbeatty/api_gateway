@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"time"
 )
 
 var (
@@ -31,6 +32,7 @@ type APP struct {
 	Log       Log       `yaml:"log" mapstructure:"log"`
 	DB        DB        `yaml:"db" mapstructure:"db"`
 	WebServer WebServer `yaml:"web" mapstructure:"web"`
+	Jwt       Jwt       `yaml:"jwt" mapstructure:"jwt"`
 }
 
 func NewAPP() APP {
@@ -38,6 +40,7 @@ func NewAPP() APP {
 		Log:       newLog(),
 		DB:        newDB(),
 		WebServer: newWebServer(),
+		Jwt:       newJwt(),
 	}
 }
 
@@ -89,5 +92,19 @@ func newWebServer() WebServer {
 		Name: "api_gateway",
 		Addr: "0.0.0.0",
 		Port: 8099,
+	}
+}
+
+type Jwt struct {
+	BearerSchema string        `yaml:"bearer_schema" mapstructure:"bearer_schema"`
+	JwtSecret    string        `yaml:"jwt_secret" mapstructure:"jwt_secret"`
+	JwtExpMin    time.Duration `yaml:"jwt_exp_min" mapstructure:"jwt_exp_min"`
+}
+
+func newJwt() Jwt {
+	return Jwt{
+		BearerSchema: "Bearer",
+		JwtSecret:    "00163e06360c",
+		JwtExpMin:    120 * time.Minute, //2小时
 	}
 }
