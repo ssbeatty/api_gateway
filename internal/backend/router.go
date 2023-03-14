@@ -2,6 +2,7 @@ package backend
 
 import (
 	"api_gateway/internal/backend/config"
+	"api_gateway/internal/backend/utils"
 	"api_gateway/internal/backend/web"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -66,9 +67,19 @@ func InitRouter(s *web.Service) *web.Service {
 	{
 		apiV1.POST("/oauth/register/admin", Handle(s.RegisterAdmin))
 		apiV1.POST("/oauth/register/tenant", Handle(s.RegisterTenant))
-		apiV1.POST("/oauth/login/password", Handle(s.GetVersion))
+		apiV1.POST("/oauth/login/password", Handle(s.OauthLoginPassword))
 		// version
 		apiV1.GET("/version", Handle(s.GetVersion))
+	}
+
+	//使用jwt中间件
+	apiV2 := r.Group("/api/v2").Use(utils.JWT())
+	{
+		apiV2.POST("/endpoints/list", Handle(s.EndpointsList))
+		apiV2.POST("/endpoints/add", Handle(s.EndpointsAdd))
+		apiV2.POST("/endpoints/delete", Handle(s.EndpointsDelete))
+		apiV2.POST("/endpoints/getdetail", Handle(s.EndpointsGetDetail))
+
 	}
 	s.Engine = r
 
@@ -82,7 +93,6 @@ func Serve(conf config.WebServer) {
 	go func() {
 		if err := s.Engine.Run(s.Addr); err != nil {
 			log.Error().AnErr(fmt.Sprintf("Listening and serving HTTP on %s", s.Addr), err)
-
 		}
 	}()
 }

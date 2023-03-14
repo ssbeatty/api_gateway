@@ -3,18 +3,17 @@ package models
 import (
 	"api_gateway/internal/backend/payload"
 	"api_gateway/internal/backend/utils"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 type Admin struct {
-	Id         int       `json:"id"`
-	Username   string    `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"` // 用户名
-	Password   string    `gorm:"column:password;size:255;not null;default:''" json:"password"`                                 // 密码
-	HeadImg    string    `gorm:"column:head_img" json:"head_img"`                                                              //头像
-	UpdateTime time.Time `gorm:"column:update_time" description:"update_time" json:"update_time"`
-	CreatTime  time.Time `gorm:"column:creat_time" description:"creat_time" json:"creat_time"`
+	Id       int    `json:"id"`
+	Username string `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"` // 用户名
+	Password string `gorm:"column:password;size:255;not null;default:''" json:"password"`                                 // 密码
+	HeadImg  string `gorm:"column:head_img" json:"head_img"`                                                              //头像
 }
 
 func (t *Admin) TableName() string {
@@ -27,10 +26,8 @@ func InsertAdmin(name string, ps string) (*Admin, error) {
 		return nil, err
 	}
 	admin := Admin{
-		Username:   name,
-		Password:   pass,
-		UpdateTime: time.Now(),
-		CreatTime:  time.Now(),
+		Username: name,
+		Password: pass,
 	}
 	err = db.Create(&admin).Error
 	if err != nil {
@@ -55,7 +52,6 @@ func UpdateAdmin(id int, Username string, Password string) (*Admin, error) {
 			return nil, err
 		}
 	}
-	admin.UpdateTime = time.Now()
 	if err := db.Save(&admin).Error; err != nil {
 		log.Error().AnErr("update admin info failed", err)
 	}
@@ -66,6 +62,15 @@ func UpdateAdmin(id int, Username string, Password string) (*Admin, error) {
 func GetAdminById(id int) (*Admin, error) {
 	admin := Admin{}
 	err := db.Where("id = ?", id).First(&admin).Error
+	if err != nil {
+		return nil, err
+	}
+	return &admin, nil
+}
+
+func GetAdminByUserName(username string) (*Admin, error) {
+	admin := Admin{}
+	err := db.Where("username = ?", username).First(&admin).Error
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +102,7 @@ func ComparePasswords(dbPassword, password string) bool {
 
 func OauthLoginPassword(req payload.OauthLoginPasswordReq) (payload.OauthSuccessData, error) {
 	var OauthSuccessData payload.OauthSuccessData
-	admin, err := GetAdminById(req.Id)
+	admin, err := GetAdminByUserName(req.UserName)
 	if err != nil {
 		return OauthSuccessData, err
 	}
@@ -106,7 +111,7 @@ func OauthLoginPassword(req payload.OauthLoginPasswordReq) (payload.OauthSuccess
 		return OauthSuccessData, err
 	}
 	if hash != admin.Password {
-		return OauthSuccessData, err
+		return OauthSuccessData, fmt.Errorf("密码不正确")
 	}
 	return SetUserJwtToken(req.Id, admin.Username)
 }

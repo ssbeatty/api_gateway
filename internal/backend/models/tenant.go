@@ -1,10 +1,8 @@
 package models
 
 import (
-	"api_gateway/internal/backend/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 // Tenant 租户
@@ -14,8 +12,6 @@ type Tenant struct {
 	Password        string `gorm:"column:password;size:255;not null;default:''" json:"password"`                                 // 密码
 	RequestQuantity string `gorm:"column:create_at" json:"request_quantity"`
 	Token           string `gorm:"column:token" json:"token"`
-	UpdateTime      string `gorm:"column:update_time" description:"update_time" json:"update_time"`
-	CreatTime       string `gorm:"column:create_time" description:"creat_time" json:"create_time"`
 }
 
 func (t *Tenant) TableName() string {
@@ -28,10 +24,8 @@ func InsertTenant(name string, ps string) (*Tenant, error) {
 		return nil, err
 	}
 	tenant := Tenant{
-		Username:   name,
-		Password:   pass,
-		UpdateTime: time.Now().Format(utils.StandardFormat),
-		CreatTime:  time.Now().Format(utils.StandardFormat),
+		Username: name,
+		Password: pass,
 	}
 	err = db.Create(&tenant).Error
 	if err != nil {
@@ -64,7 +58,6 @@ func UpdateTenant(id int, Username string, Password string, token, RequestQuanti
 		tenant.RequestQuantity = RequestQuantity
 	}
 
-	tenant.UpdateTime = time.Now().Format(utils.StandardFormat)
 	if err := db.Save(&tenant).Error; err != nil {
 		log.Error().AnErr("update admin info failed", err)
 	}

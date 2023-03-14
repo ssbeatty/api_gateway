@@ -1,0 +1,157 @@
+basePath: /api/v1
+info:
+  contact: {}
+paths:
+  /endpoints/add:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 新增/修改路由配置（未携带id信息为新增）
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 新增/修改路由配置
+      tags:
+      - endpoints
+  /endpoints/delete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 删除路由配置
+      parameters:
+      - description: 网关配置的id
+        in: query
+        name: id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 删除路由配置
+      tags:
+      - endpoints
+  /endpoints/detail:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取路由配置详情
+      parameters:
+      - description: 网关配置的id
+        in: query
+        name: id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 获取路由配置详情
+      tags:
+      - endpoints
+  /endpoints/list:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取所有路由配置
+      parameters:
+      - description: 页码数
+        in: query
+        name: page_num
+        type: integer
+      - default: 20
+        description: 分页尺寸
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 获取所有路由配置
+      tags:
+      - endpoints
+  /oauth/login/password:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 账号密码登录
+      operationId: OauthLoginPassword
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        type: integer
+      - description: 密码
+        in: query
+        name: password
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 账号密码登录
+      tags:
+      - Oauth
+  /register/admin:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 注册管理员用户
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        type: integer
+      - description: 密码
+        in: query
+        name: password
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 注册管理员用户
+      tags:
+      - register
+  /register/tenant:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 注册租户
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        type: integer
+      - description: 密码
+        in: query
+        name: password
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 注册租户
+      tags:
+      - register
+  /version:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取当前版本
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 获取当前版本
+      tags:
+      - system
+swagger: "2.0"

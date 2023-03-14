@@ -1,42 +1,45 @@
 package payload
 
 type EndPoint struct {
-	Id         int      `json:"id"`
-	Name       string   `json:"name"`
-	Type       string   `json:"type"`
-	Routers    []Router `json:"routers"`
-	UpdateTime string   `json:"update_time"`
-	CreatTime  string   `json:"creat_time"`
+	Id      int      `form:"id"`
+	Name    string   `form:"name"`
+	Type    string   `form:"type"`
+	Routers []Router `form:"routers"`
 }
 
 type Router struct {
-	Id          int              `json:"id"`
-	EndPointId  int              `json:"endpoint_id"`
-	Rule        string           `json:"rule"`
-	Type        string           `json:"type"`
-	TlsEnable   int              `json:"tls_enable"`
-	Priority    int              `json:"priority"`
-	Host        string           `json:"host"`
-	UpStream    UpStreamInfo     `json:"up_stream"`
-	Tls         TlsInfo          `json:"tls"`
-	Middlewares []MiddleWareInfo `json:"middlewares"`
+	Id          int              `form:"id"`
+	EndPointId  int              `form:"endpoint_id"`
+	Rule        string           `form:"rule"`
+	Type        string           `form:"type"`
+	TlsEnable   int              `form:"tls_enable"`
+	Priority    int              `form:"priority"`
+	Host        string           `form:"host"`
+	UpStream    UpStreamInfo     `form:"up_stream"`
+	Tls         TlsInfo          `form:"tls"`
+	Middlewares []MiddleWareInfo `form:"middlewares"`
 }
 
 type MiddleWareInfo struct {
-	Id     int    `json:"id"`
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	Config string `json:"config"`
+	Id     int    `form:"id"`
+	Name   string `form:"name"`
+	Type   string `form:"type"`
+	Config string `form:"config"`
 }
 
 type UpStreamInfo struct {
-	Type        string `json:"type"`
-	Path        string `json:"path"`
-	Weights     string `json:"weights"`
-	LoadBalance string `json:"load_balance"`
+	Type        string `form:"type"`
+	Path        string `form:"path"`
+	Weights     string `form:"weights"`
+	LoadBalance string `form:"load_balance"`
 }
 
 type TlsInfo struct {
-	Type       string `json:"type"`
-	ClientAuth string `json:"client_auth"`
+	Type       string `form:"type"`
+	ClientAuth string `form:"client_auth"`
+}
+
+type Pages struct {
+	PageNum  int `form:"page_num"`
+	PageSize int `form:"page_size"`
 }
