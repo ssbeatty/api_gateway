@@ -19,3 +19,4 @@ config.yaml
 endpoints.yaml
 *.pem
 logs
+*.db

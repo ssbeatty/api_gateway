@@ -4,9 +4,11 @@ import (
 	"api_gateway/pkg/safe"
 	"context"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"net"
 	"net/url"
 	"reflect"
+	"runtime"
 	"sort"
 	"time"
 )
@@ -24,36 +26,41 @@ type checkInfo struct {
 }
 
 type LoadBalanceCheckConf struct {
+	s *loadBalanceCheckConf
+}
+
+type loadBalanceCheckConf struct {
 	observers    []Observer
 	confIpWeight map[string]checkInfo
 	activeList   []string
+	closer       chan struct{}
 }
 
 func (s *LoadBalanceCheckConf) Attach(o Observer) {
-	s.observers = append(s.observers, o)
-}
-
-func (s *LoadBalanceCheckConf) NotifyAllObservers() {
-	for _, obs := range s.observers {
-		obs.Update()
-	}
+	s.s.observers = append(s.s.observers, o)
 }
 
 func (s *LoadBalanceCheckConf) GetConf() []string {
 	var confList []string
-	for _, ip := range s.activeList {
-		weight := s.confIpWeight[ip]
+	for _, ip := range s.s.activeList {
+		weight := s.s.confIpWeight[ip]
 		confList = append(confList, fmt.Sprintf("%s,%d", ip, weight.IpWeight))
 	}
 	return confList
 }
 
 func (s *LoadBalanceCheckConf) WatchConf(ctx context.Context) {
+	s.s.WatchConf(ctx)
+}
+
+func (s *loadBalanceCheckConf) WatchConf(ctx context.Context) {
+	defer log.Debug().Msg("load balance check exit.")
 	confIpErrNum := map[string]int{}
 	for {
-
 		select {
 		case <-ctx.Done():
+			return
+		case <-s.closer:
 			return
 		default:
 			var changedList []string
@@ -81,14 +88,41 @@ func (s *LoadBalanceCheckConf) WatchConf(ctx context.Context) {
 	}
 }
 
-func (s *LoadBalanceCheckConf) UpdateConf(conf []string) {
+func (s *loadBalanceCheckConf) UpdateConf(conf []string) {
 	s.activeList = conf
 	for _, obs := range s.observers {
 		obs.Update()
 	}
 }
 
-func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalanceCheckConf, error) {
+func (s *LoadBalanceCheckConf) UpdateConf(conf []string) {
+	s.s.UpdateConf(conf)
+}
+
+func NewLoadBalanceCheckConf(ctx context.Context, conf map[string]int, pool *safe.Pool) (*LoadBalanceCheckConf, error) {
+
+	lc, err := newLoadBalanceCheckConf(conf)
+
+	if err != nil {
+		return nil, err
+	}
+
+	mConf := &LoadBalanceCheckConf{
+		s: lc,
+	}
+
+	pool.Go(func() {
+		mConf.WatchConf(ctx)
+	})
+
+	runtime.SetFinalizer(mConf, func(mConf *LoadBalanceCheckConf) {
+		mConf.s.closer <- struct{}{}
+	})
+
+	return mConf, nil
+}
+
+func newLoadBalanceCheckConf(conf map[string]int) (*loadBalanceCheckConf, error) {
 	var (
 		aList        []string
 		checkInfoCfg = make(map[string]checkInfo)
@@ -120,9 +154,11 @@ func NewLoadBalanceCheckConf(conf map[string]int, pool *safe.Pool) (*LoadBalance
 			}
 		}
 	}
-	mConf := &LoadBalanceCheckConf{activeList: aList, confIpWeight: checkInfoCfg}
-
-	pool.GoCtx(mConf.WatchConf)
+	mConf := &loadBalanceCheckConf{
+		activeList:   aList,
+		confIpWeight: checkInfoCfg,
+		closer:       make(chan struct{}, 1),
+	}
 
 	return mConf, nil
 }

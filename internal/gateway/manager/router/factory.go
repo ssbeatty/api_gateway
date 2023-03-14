@@ -14,6 +14,7 @@ import (
 type Factory struct {
 	staticConfiguration config.Gateway
 	upstreamFactory     *upstream.Factory
+	cancelPrevState     context.CancelFunc
 }
 
 // NewRouterFactory creates a new RouterFactory.
@@ -26,12 +27,17 @@ func NewRouterFactory(staticConfiguration config.Gateway, upstreamFactory *upstr
 }
 
 // CreateTCPRouters creates new TCPRouter.
-func (f *Factory) CreateTCPRouters(ctx context.Context, rtConf *config.Endpoint) (*tcprouter.Router, *GrpcServer, *GrpcServer) {
-
+func (f *Factory) CreateTCPRouters(rootCtx context.Context, rtConf *config.Endpoint) (*tcprouter.Router, *GrpcServer, *GrpcServer) {
+	if f.cancelPrevState != nil {
+		f.cancelPrevState()
+	}
 	var (
 		httpTLSConfig *tls.Config
 		err           error
+		ctx           context.Context
 	)
+
+	ctx, f.cancelPrevState = context.WithCancel(rootCtx)
 
 	// build http handler
 	handlersNonTLS := f.buildHttpHandlers(ctx, rtConf, false)

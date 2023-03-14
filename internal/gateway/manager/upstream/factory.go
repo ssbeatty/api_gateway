@@ -24,7 +24,7 @@ func NewFactory(staticConfiguration config.Gateway, routinesPool *safe.Pool) *Fa
 	}
 }
 
-func (f *Factory) buildUpstreamLoadBalancer(upstreamConfig *config.Upstream) (loadbalancer.LoadBalance, error) {
+func (f *Factory) buildUpstreamLoadBalancer(ctx context.Context, upstreamConfig *config.Upstream) (loadbalancer.LoadBalance, error) {
 	ipConf := map[string]int{}
 	for ipIndex, ipItem := range upstreamConfig.Paths {
 		if upstreamConfig.Weights == nil {
@@ -34,7 +34,7 @@ func (f *Factory) buildUpstreamLoadBalancer(upstreamConfig *config.Upstream) (lo
 		ipConf[ipItem] = upstreamConfig.Weights[ipIndex]
 	}
 
-	mConf, err := loadbalancer.NewLoadBalanceCheckConf(ipConf, f.routinesPool)
+	mConf, err := loadbalancer.NewLoadBalanceCheckConf(ctx, ipConf, f.routinesPool)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (f *Factory) buildUpstreamLoadBalancer(upstreamConfig *config.Upstream) (lo
 	return lb, nil
 }
 
-func (f *Factory) BuildHttpUpstreamHandler(upstreamConfig *config.Upstream) (http.Handler, error) {
-	lb, err := f.buildUpstreamLoadBalancer(upstreamConfig)
+func (f *Factory) BuildHttpUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (http.Handler, error) {
+	lb, err := f.buildUpstreamLoadBalancer(ctx, upstreamConfig)
 
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (f *Factory) BuildHttpUpstreamHandler(upstreamConfig *config.Upstream) (htt
 }
 
 func (f *Factory) BuildTCPUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (tcp.Handler, error) {
-	lb, err := f.buildUpstreamLoadBalancer(upstreamConfig)
+	lb, err := f.buildUpstreamLoadBalancer(ctx, upstreamConfig)
 
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (f *Factory) BuildTCPUpstreamHandler(ctx context.Context, upstreamConfig *c
 }
 
 func (f *Factory) BuildGRPCUpstreamHandler(ctx context.Context, upstreamConfig *config.Upstream) (grpc.StreamHandler, error) {
-	lb, err := f.buildUpstreamLoadBalancer(upstreamConfig)
+	lb, err := f.buildUpstreamLoadBalancer(ctx, upstreamConfig)
 
 	if err != nil {
 		return nil, err
