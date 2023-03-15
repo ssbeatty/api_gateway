@@ -1,0 +1,179 @@
+definitions:
+  payload.AdminLoginPasswordReq:
+    properties:
+      password:
+        example: "123456"
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  payload.AdminLoginPasswordResp:
+    properties:
+      token:
+        type: string
+      token_expire_at:
+        type: integer
+      username:
+        type: string
+    type: object
+  payload.AdminRegisterReq:
+    properties:
+      password:
+        example: "123456"
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  payload.Response:
+    properties:
+      code:
+        type: string
+      data: {}
+      msg:
+        type: string
+      type:
+        description: data msg error
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/endpoints/add:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 新增/修改路由配置（未携带id信息为新增）
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 新增/修改路由配置
+      tags:
+      - endpoints
+  /api/v1/endpoints/delete:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 删除路由配置
+      parameters:
+      - description: 网关配置的id
+        in: query
+        name: id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 删除路由配置
+      tags:
+      - endpoints
+  /api/v1/endpoints/detail:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取路由配置详情
+      parameters:
+      - description: 网关配置的id
+        in: query
+        name: id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 获取路由配置详情
+      tags:
+      - endpoints
+  /api/v1/endpoints/list:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取所有路由配置
+      parameters:
+      - description: 页码数
+        in: query
+        name: page_num
+        type: integer
+      - default: 20
+        description: 分页尺寸
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 获取所有路由配置
+      tags:
+      - endpoints
+  /auth/admin/login:
+    post:
+      consumes:
+      - application/json
+      description: admin账号密码登录
+      operationId: AdminLoginPassword
+      parameters:
+      - description: auth info
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/payload.AdminLoginPasswordReq'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/payload.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/payload.AdminLoginPasswordResp'
+              type: object
+      summary: admin账号密码登录
+      tags:
+      - auth
+  /auth/admin/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册管理员用户
+      parameters:
+      - description: auth info
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/payload.AdminRegisterReq'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payload.Response'
+      summary: 注册管理员用户
+      tags:
+      - auth
+  /version:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取当前版本
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      tags:
+      - system
+swagger: "2.0"

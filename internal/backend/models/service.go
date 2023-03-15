@@ -107,13 +107,13 @@ func InitModels(config config.DB, ctx context.Context) error {
 		},
 	)
 
-	_ = createDB(config.Driver, config.User, config.Pass, config.DSN, config.DBName)
+	_ = createDB(config.Driver, config.UserName, config.PassWord, config.DSN, config.DBName)
 	dfConfig := &gorm.Config{
 		Logger: newLogger,
 	}
 
 	if config.Driver == DBDriverMysql {
-		dataSource = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", config.User, config.Pass, config.DSN, config.DBName)
+		dataSource = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", config.UserName, config.PassWord, config.DSN, config.DBName)
 		d, err = gorm.Open(mysql.Open(dataSource), dfConfig)
 		db = &DataBase{d, nil}
 	} else if config.Driver == DBDriverPostgres {
@@ -122,7 +122,7 @@ func InitModels(config config.DB, ctx context.Context) error {
 			return errors.New("dsn parse error")
 		}
 		dataSource = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-			dsnArgs[0], config.User, config.Pass, config.DBName, dsnArgs[1],
+			dsnArgs[0], config.UserName, config.PassWord, config.DBName, dsnArgs[1],
 		)
 		d, err = gorm.Open(postgres.Open(dataSource), dfConfig)
 		db = &DataBase{d, nil}
@@ -147,6 +147,13 @@ func InitModels(config config.DB, ctx context.Context) error {
 
 	if err != nil {
 		logger.Error().AnErr("gorm open filed", err)
+		return err
+	}
+
+	if err = db.AutoMigrate(
+		new(Admin),
+	); err != nil {
+		logger.Err(err).Msg("Migrate error! err: %v")
 		return err
 	}
 

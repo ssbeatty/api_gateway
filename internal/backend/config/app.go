@@ -32,7 +32,6 @@ type APP struct {
 	Log       Log       `yaml:"log" mapstructure:"log"`
 	DB        DB        `yaml:"db" mapstructure:"db"`
 	WebServer WebServer `yaml:"web" mapstructure:"web"`
-	Jwt       Jwt       `yaml:"jwt" mapstructure:"jwt"`
 }
 
 func NewAPP() APP {
@@ -40,18 +39,12 @@ func NewAPP() APP {
 		Log:       newLog(),
 		DB:        newDB(),
 		WebServer: newWebServer(),
-		Jwt:       newJwt(),
 	}
 }
 
 type Log struct {
 	Level string `yaml:"level" mapstructure:"level"`
 	Path  string `yaml:"path" mapstructure:"path"`
-}
-
-type AccessLog struct {
-	Enable      bool   `yaml:"enable" mapstructure:"enable"`
-	HttpLogPath string `yaml:"httpLogPath" mapstructure:"httpLogPath"`
 }
 
 func newLog() Log {
@@ -64,8 +57,8 @@ func newLog() Log {
 type DB struct {
 	Driver   string `yaml:"driver" mapstructure:"driver"`
 	DSN      string `yaml:"dsn" mapstructure:"dsn"`
-	User     string `yaml:"user" mapstructure:"user"`
-	Pass     string `yaml:"pass" mapstructure:"pass"`
+	UserName string `yaml:"username" mapstructure:"username"`
+	PassWord string `yaml:"password" mapstructure:"password"`
 	DBName   string `yaml:"db_name" mapstructure:"db_name"`
 	DataPath string `yaml:"data_path" mapstructure:"data_path"`
 }
@@ -74,37 +67,37 @@ func newDB() DB {
 	return DB{
 		Driver:   "sqlite",
 		DSN:      "127.0.0.1:3306",
-		User:     "root",
-		Pass:     "123456",
+		UserName: "root",
+		PassWord: "123456",
 		DBName:   "gateway",
-		DataPath: "db",
+		DataPath: "data",
 	}
 }
 
 type WebServer struct {
-	Name string `yaml:"name" mapstructure:"name"`
-	Addr string `yaml:"addr" mapstructure:"addr"`
-	Port int    `yaml:"port" mapstructure:"port"`
+	BindAddr string `yaml:"bind_addr" mapstructure:"bind_addr"`
+	BindPort int    `yaml:"bind_port" mapstructure:"bind_port"`
+	Jwt      Jwt    `yaml:"jwt" mapstructure:"jwt"`
 }
 
 func newWebServer() WebServer {
 	return WebServer{
-		Name: "api_gateway",
-		Addr: "0.0.0.0",
-		Port: 8099,
+		BindAddr: "0.0.0.0",
+		BindPort: 8099,
+		Jwt:      newJwt(),
 	}
 }
 
 type Jwt struct {
-	BearerSchema string        `yaml:"bearer_schema" mapstructure:"bearer_schema"`
-	JwtSecret    string        `yaml:"jwt_secret" mapstructure:"jwt_secret"`
-	JwtExpMin    time.Duration `yaml:"jwt_exp_min" mapstructure:"jwt_exp_min"`
+	BearerSchema  string        `yaml:"bearer_schema" mapstructure:"bearer_schema"`
+	JwtSecretPath string        `yaml:"jwt_secret" mapstructure:"jwt_secret"`
+	JwtExp        time.Duration `yaml:"jwt_exp" mapstructure:"jwt_exp"`
 }
 
 func newJwt() Jwt {
 	return Jwt{
-		BearerSchema: "Bearer",
-		JwtSecret:    "00163e06360c",
-		JwtExpMin:    120 * time.Minute, //2小时
+		BearerSchema:  "Bearer",
+		JwtSecretPath: "00163e06360c",
+		JwtExp:        2 * time.Hour,
 	}
 }
