@@ -19,7 +19,7 @@ type RouterInfo struct {
 	TlsEnable   bool             `json:"tls_enable"`
 	Priority    int              `json:"priority"`
 	Host        string           `json:"host" binding:"required_if=TlsEnable true,hostname"`
-	UpStream    UpStreamInfo     `json:"up_stream" binding:"required"`
+	UpStream    UpStreamInfo     `json:"upstream" binding:"required"`
 	Tls         TlsInfo          `json:"tls"  binding:"required_if=TlsEnable true"`
 	Middlewares []MiddleWareInfo `json:"middlewares"`
 }
