@@ -26,11 +26,46 @@ const docTemplate = `{
                     "endpoints"
                 ],
                 "summary": "新增/修改路由配置",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "配置id",
+                        "name": "id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "网关配置名称",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "类型",
+                        "name": "type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "路由列表",
+                        "name": "routers",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -51,7 +86,8 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "网关配置的id",
                         "name": "id",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -59,6 +95,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -79,7 +121,8 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "网关配置的id",
                         "name": "id",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -87,6 +130,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -104,24 +153,32 @@ const docTemplate = `{
                 "summary": "获取所有路由配置",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "页码数",
                         "name": "page_num",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "integer",
-                        "default": 20,
+                        "type": "string",
+                        "default": "20",
                         "description": "分页尺寸",
                         "name": "page_size",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/payload.EndPoint"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -140,23 +197,31 @@ const docTemplate = `{
                 "operationId": "OauthLoginPassword",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "用户名",
                         "name": "user_name",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "密码",
                         "name": "password",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/payload.OauthSuccessData"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -174,23 +239,31 @@ const docTemplate = `{
                 "summary": "注册管理员用户",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "用户名",
                         "name": "user_name",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "密码",
                         "name": "password",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/payload.OauthSuccessData"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -208,23 +281,31 @@ const docTemplate = `{
                 "summary": "注册租户",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "用户名",
                         "name": "user_name",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "密码",
                         "name": "password",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/payload.RegisterUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payload.Response"
                         }
                     }
                 }
@@ -247,6 +328,159 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "payload.EndPoint": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "routers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/payload.Router"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "payload.MiddleWareInfo": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "payload.OauthSuccessData": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "toke": {
+                    "type": "string"
+                },
+                "tokenExpireAt": {
+                    "type": "string"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "payload.RegisterUser": {
+            "type": "object",
+            "required": [
+                "password",
+                "userName"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "payload.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "data": {},
+                "msg": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "data msg error",
+                    "type": "string"
+                }
+            }
+        },
+        "payload.Router": {
+            "type": "object",
+            "properties": {
+                "endPointId": {
+                    "type": "integer"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "middlewares": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/payload.MiddleWareInfo"
+                    }
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "rule": {
+                    "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/payload.TlsInfo"
+                },
+                "tlsEnable": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "upStream": {
+                    "$ref": "#/definitions/payload.UpStreamInfo"
+                }
+            }
+        },
+        "payload.TlsInfo": {
+            "type": "object",
+            "properties": {
+                "clientAuth": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "payload.UpStreamInfo": {
+            "type": "object",
+            "properties": {
+                "loadBalance": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "weights": {
+                    "type": "string"
                 }
             }
         }
