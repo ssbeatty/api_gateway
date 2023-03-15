@@ -1,45 +1,48 @@
 package payload
 
-type EndPoint struct {
-	Id      int      `form:"id"`
-	Name    string   `form:"name"`
-	Type    string   `form:"type"`
-	Routers []Router `form:"routers"`
+import (
+	"api_gateway/internal/gateway/config"
+	"api_gateway/internal/gateway/manager/upstream/loadbalancer"
+)
+
+// request
+
+type PostEndPointReq struct {
+	Name    string              `json:"name" binding:"required" example:"tcp_endpoint_1"`
+	Type    config.EndpointType `json:"type" binding:"required" example:"tcp"`
+	Routers []RouterInfo        `json:"routers"`
 }
 
-type Router struct {
-	Id          int              `form:"id"`
-	EndPointId  int              `form:"endpoint_id"`
-	Rule        string           `form:"rule"`
-	Type        string           `form:"type"`
-	TlsEnable   int              `form:"tls_enable"`
-	Priority    int              `form:"priority"`
-	Host        string           `form:"host"`
-	UpStream    UpStreamInfo     `form:"up_stream"`
-	Tls         TlsInfo          `form:"tls"`
-	Middlewares []MiddleWareInfo `form:"middlewares"`
+type RouterInfo struct {
+	Rule        string           `json:"rule" binding:"required" example:"Host(\"api.demo.com\") && PathPrefix(\"/\")"`
+	Type        config.RuleType  `json:"type" binding:"required" example:"http"`
+	TlsEnable   bool             `json:"tls_enable"`
+	Priority    int              `json:"priority"`
+	Host        string           `json:"host" binding:"required_if=TlsEnable true,hostname"`
+	UpStream    UpStreamInfo     `json:"up_stream" binding:"required"`
+	Tls         TlsInfo          `json:"tls"  binding:"required_if=TlsEnable true"`
+	Middlewares []MiddleWareInfo `json:"middlewares"`
 }
 
 type MiddleWareInfo struct {
-	Id     int    `form:"id"`
-	Name   string `form:"name"`
-	Type   string `form:"type"`
-	Config string `form:"config"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Config string `json:"config"`
 }
 
 type UpStreamInfo struct {
-	Type        string `form:"type"`
-	Path        string `form:"path"`
-	Weights     string `form:"weights"`
-	LoadBalance string `form:"load_balance"`
+	Type        config.UpstreamType `json:"type" binding:"required" example:"url"`
+	Path        []string            `json:"path"`
+	Weights     []string            `json:"weights"`
+	LoadBalance loadbalancer.LbType `json:"load_balance"`
 }
 
 type TlsInfo struct {
-	Type       string `form:"type"`
-	ClientAuth string `form:"client_auth"`
+	Type       string `json:"type"`
+	ClientAuth string `json:"client_auth"`
 }
 
 type Pages struct {
-	PageNum  int `form:"page_num"`
-	PageSize int `form:"page_size"`
+	PageNum  int `json:"page_num"`
+	PageSize int `json:"page_size"`
 }

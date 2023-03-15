@@ -15,7 +15,7 @@ func (t *EndPoint) TableName() string {
 	return "endpoint"
 }
 
-func InsertEndPoint(name string, tp string, routers []payload.Router) (*EndPoint, error) {
+func InsertEndPoint(name string, tp string, routers []payload.RouterInfo) (*EndPoint, error) {
 
 	endPoint := EndPoint{
 		Name: name,
@@ -48,7 +48,7 @@ func DeleteEndPointById(id int) (*EndPoint, error) {
 	return &endPoint, nil
 }
 
-func UpDataEndPoint(id int, name string, tp string, routers []payload.Router) (*EndPoint, error) {
+func UpDataEndPoint(id int, name string, tp string, routers []payload.RouterInfo) (*EndPoint, error) {
 	endPoint := EndPoint{Id: id}
 	err := db.Where("id = ?", id).First(&endPoint).Error
 	if err != nil {
@@ -86,25 +86,5 @@ func GetEndPointList(pageSize, page int) ([]*EndPoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	return endPoint, nil
-}
-
-func EndPointUpsert(point payload.EndPoint) (*EndPoint, error) {
-	var (
-		endPoint *EndPoint
-		err      error
-	)
-	if point.Id != 0 {
-		endPoint, err = UpDataEndPoint(point.Id, point.Name, point.Type, point.Routers)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		endPoint, err = InsertEndPoint(point.Name, point.Type, point.Routers)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return endPoint, nil
 }
