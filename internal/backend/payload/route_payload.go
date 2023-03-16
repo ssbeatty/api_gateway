@@ -14,6 +14,10 @@ type PostEndPointReq struct {
 	Routers    []RouterInfo        `json:"routers"`
 }
 
+type OptionEndpointReq struct {
+	Id int `uri:"id" binding:"required"`
+}
+
 type RouterInfo struct {
 	Id          int              `json:"id"`
 	Rule        string           `json:"rule" binding:"required"`

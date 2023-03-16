@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/handler"
 	"api_gateway/internal/backend/models"
 	"api_gateway/internal/backend/payload"
@@ -122,7 +121,10 @@ func InitRouter(s *handler.Service) *handler.Service {
 	apiV1.Use(authMiddleware.MiddlewareFunc())
 	{
 		apiV1.GET("/endpoints", Handle(s.EndpointsQuery))
+		apiV1.GET("/endpoints/:id", Handle(s.EndpointsDetail))
 		apiV1.POST("/endpoints", Handle(s.EndpointsCreate))
+		apiV1.PUT("/endpoints/:id", Handle(s.EndpointsUpdate))
+		apiV1.DELETE("/endpoints/:id", Handle(s.EndpointsDelete))
 	}
 
 	s.Engine = r
@@ -130,9 +132,9 @@ func InitRouter(s *handler.Service) *handler.Service {
 	return s
 }
 
-func Serve(conf config.WebServer) {
+func Serve(srv *handler.Service) {
 	gin.SetMode(gin.ReleaseMode)
-	s := InitRouter(handler.NewService(conf))
+	s := InitRouter(srv)
 	log.Info().Msg(fmt.Sprintf("Listening and serving HTTP on %s", s.Addr))
 	go func() {
 		if err := s.Engine.Run(s.Addr); err != nil {

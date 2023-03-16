@@ -7,7 +7,7 @@ import (
 )
 
 type Router struct {
-	Id          int      `json:"id"`
+	Id          int      `gorm:"primaryKey" json:"id"`
 	Rule        string   `gorm:"column:rule" json:"rule"`
 	Type        string   `gorm:"column:router_type;not null" json:"type"`
 	TlsEnable   bool     `gorm:"column:tls_enable" json:"tls_enable"`
@@ -25,7 +25,7 @@ func (t *Router) TableName() string {
 	return "routers"
 }
 
-func InsertOrUpdateRouter(endpointID int, info payload.RouterInfo) (*Router, error) {
+func InsertRouter(endpointID int, info payload.RouterInfo) (*Router, error) {
 	session := db.Session(&gorm.Session{})
 
 	upstreamJson, err := json.Marshal(info.UpStream)
@@ -49,17 +49,22 @@ func InsertOrUpdateRouter(endpointID int, info payload.RouterInfo) (*Router, err
 	}
 
 	if info.CertId != 0 {
-		if cert, err := GetCertById(info.CertId); err == nil {
+		if cert, errF := GetCertById(info.CertId); err == nil {
 			r.CertID = cert.Id
 		} else {
-			return nil, err
+			return nil, errF
 		}
 	} else {
 		session = session.Omit("CertID")
 	}
 
-	if err := session.Save(&r).Error; err != nil {
+	if err = session.Save(&r).Error; err != nil {
 		return nil, err
 	}
+
 	return &r, nil
+}
+
+func ClearEndpointRouters(endpointID int) error {
+	return db.Where("endpoint_id = ?", endpointID).Delete(&Router{}).Error
 }

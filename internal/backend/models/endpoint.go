@@ -6,7 +6,7 @@ import (
 )
 
 type Endpoint struct {
-	Id         int      `json:"id"`
+	Id         int      `gorm:"primaryKey" json:"id"`
 	Name       string   `gorm:"column:endpoint_name;not null;index:type_port,unique" json:"name"`
 	Type       string   `gorm:"column:type;not null" json:"type"`
 	ListenPort int      `gorm:"column:listen_port;index:type_port,unique" json:"listen_port"`
@@ -30,7 +30,7 @@ func InsertEndpoint(info payload.PostEndPointReq) (*Endpoint, error) {
 	}
 
 	for _, info := range info.Routers {
-		_, err = InsertOrUpdateRouter(endpoint.Id, info)
+		_, err = InsertRouter(endpoint.Id, info)
 		if err != nil {
 			logger.Error().Err(err).Msg("Error when insert router")
 			continue
@@ -50,26 +50,56 @@ func QueryEndpoints() ([]Endpoint, error) {
 	return records, nil
 }
 
-func DeleteEndPointById(id int) (*Endpoint, error) {
+func UpdateEndpoint(id int, info payload.PostEndPointReq) (*Endpoint, error) {
+	endpoint := Endpoint{Id: id}
+
+	if info.Name != "" {
+		endpoint.Name = info.Name
+	}
+	if info.Type != "" {
+		endpoint.Type = string(info.Type)
+	}
+	if info.ListenPort != 0 {
+		endpoint.ListenPort = info.ListenPort
+	}
+
+	if err := db.Updates(&endpoint).Error; err != nil {
+		return nil, err
+	}
+
+	err := ClearEndpointRouters(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, i := range info.Routers {
+		_, err = InsertRouter(endpoint.Id, i)
+		if err != nil {
+			logger.Error().Err(err).Msg("Error when insert router")
+			continue
+		}
+	}
+	return GetEndPointById(id)
+}
+
+func DeleteEndPointById(id int) error {
 	endPoint := Endpoint{}
 	err := db.Where("id = ?", id).First(&endPoint).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = db.Delete(&endPoint).Error
 	if err != nil {
-		logger.Error().AnErr("DeleteEndPointById error", err)
-
-		return nil, err
+		return err
 	}
 
-	return &endPoint, nil
+	return nil
 }
 
 func GetEndPointById(id int) (*Endpoint, error) {
 	endPoint := Endpoint{}
-	err := db.Where("id = ?", id).First(&endPoint).Error
+	err := db.Where("id = ?", id).Preload(clause.Associations).First(&endPoint).Error
 	if err != nil {
 		return nil, err
 	}

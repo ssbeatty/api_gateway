@@ -3,7 +3,9 @@ package handler
 import (
 	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/payload"
+	"api_gateway/internal/gateway/dynamic"
 	"api_gateway/pkg/logs"
+	"api_gateway/pkg/safe"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -20,15 +22,20 @@ const (
 	ServiceBackend      = "backend"
 )
 
+type Provider interface {
+	Provide(configurationChan chan<- dynamic.Message, pool *safe.Pool) error
+}
+
 type Service struct {
 	Engine      *gin.Engine
 	Addr        string
 	conf        config.WebServer
 	TokenExpire time.Duration
 	JwtKeyBytes []byte
+	provider    Provider
 }
 
-func NewService(conf config.WebServer) *Service {
+func NewService(conf config.WebServer, provider Provider) *Service {
 	logger := log.With().Str(logs.ServiceName, ServiceBackend).Logger()
 
 	pkFile, err := os.Open(conf.Jwt.JwtSecretPath)
@@ -46,6 +53,7 @@ func NewService(conf config.WebServer) *Service {
 		conf:        conf,
 		TokenExpire: conf.Jwt.JwtExp,
 		JwtKeyBytes: pkBytes,
+		provider:    provider,
 	}
 
 	return service

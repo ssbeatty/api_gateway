@@ -104,7 +104,7 @@ func InitModels(config config.DB, ctx context.Context) error {
 			SlowThreshold:             time.Second,
 			LogLevel:                  gormLogger.Error,
 			IgnoreRecordNotFoundError: true,
-			Colorful:                  false,
+			Colorful:                  true,
 		},
 	)
 
