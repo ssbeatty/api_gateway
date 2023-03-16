@@ -1,101 +1,65 @@
 package models
 
+import (
+	"api_gateway/internal/backend/payload"
+	"encoding/json"
+	"gorm.io/gorm"
+)
+
 type Router struct {
-	Id          int    `json:"id"`
-	EndPointId  int    `gorm:"column:endpoint_id" json:"endpoint_id"`
-	Rule        string `gorm:"column:rule" json:"rule"`
-	Type        string `gorm:"column:router_type;size:64;not null;default:''" json:"type"`
-	TlsEnable   int    `gorm:"column:tls_enable" json:"tls_enable"`
-	Priority    int    `gorm:"column:priority" json:"priority"`
-	Host        string `gorm:"column:host" json:"host"`
-	UpStream    string `gorm:"column:up_stream" json:"up_stream"`
-	Tls         string `gorm:"column:tls" json:"tls"`
-	Middlewares string `gorm:"column:middlewares" json:"middlewares"`
+	Id          int      `json:"id"`
+	Rule        string   `gorm:"column:rule" json:"rule"`
+	Type        string   `gorm:"column:router_type;not null" json:"type"`
+	TlsEnable   bool     `gorm:"column:tls_enable" json:"tls_enable"`
+	Priority    int      `gorm:"column:priority" json:"priority"`
+	Host        string   `gorm:"column:host" json:"host"`
+	UpStream    string   `gorm:"column:upstream" json:"upstream"`
+	Middlewares string   `gorm:"column:middlewares" json:"middlewares"`
+	EndpointId  int      `gorm:"column:endpoint_id" json:"endpoint_id"`
+	CertID      int      `gorm:"column:cert_id" json:"cert_id"`
+	Cert        Cert     `gorm:"constraint:OnDelete:SET NULL;" json:"-"`
+	Endpoint    Endpoint `json:"-"`
 }
 
 func (t *Router) TableName() string {
-	return "router"
+	return "routers"
 }
 
-func UpDataRouter(id int, rule string, tp string, tlsEnable int, priority int, host string, UpStream, Tls, Middlewares string) (*Router, error) {
-	router := Router{Id: id}
-	err := db.Where("id = ?", id).First(&router).Error
+func InsertOrUpdateRouter(endpointID int, info payload.RouterInfo) (*Router, error) {
+	session := db.Session(&gorm.Session{})
+
+	upstreamJson, err := json.Marshal(info.UpStream)
 	if err != nil {
 		return nil, err
 	}
-	if rule != "" {
-		router.Rule = rule
-	}
-	if tp != "" {
-		router.Type = tp
-	}
-
-	if tlsEnable != router.TlsEnable {
-		router.TlsEnable = tlsEnable
-	}
-	if priority != router.Priority {
-		router.Priority = priority
-	}
-	if host != "" {
-		router.Host = host
-	}
-	if UpStream != "" {
-		router.UpStream = UpStream
-	}
-	if Tls != "" {
-		router.Host = Tls
-	}
-	if Middlewares != "" {
-		router.Host = Middlewares
-	}
-
-	if err := db.Save(&router).Error; err != nil {
-		return nil, err
-	}
-	return &router, nil
-}
-
-func GetRouterById(id int) (*Router, error) {
-	router := Router{}
-	err := db.Where("id = ?", id).First(&router).Error
+	middlewareJson, err := json.Marshal(info.Middlewares)
 	if err != nil {
 		return nil, err
 	}
-	return &router, nil
-}
-
-func DeleteRouterById(id int) (*Router, error) {
-	router := Router{}
-	err := db.Where("id = ?", id).First(&router).Error
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Model(&router).Association("Middlewares").Clear(); err != nil {
-		return nil, err
-	}
-	if err := db.Model(&router).Association("UpStream").Clear(); err != nil {
-		return nil, err
-	}
-	if err := db.Model(&router).Association("Tls").Clear(); err != nil {
-		return nil, err
-	}
-	err = db.Delete(&router).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &router, nil
-}
-
-func InsertRouter(eid int, role string, tp string, tlsEnable int, priority int, host string, UpStreamID int, tlsID int, middlewares []int) (*Router, error) {
 	r := Router{
-		EndPointId: eid,
-		Rule:       role,
-		Type:       tp,
-		TlsEnable:  tlsEnable,
-		Priority:   priority,
-		Host:       host,
+		Id:          info.Id,
+		EndpointId:  endpointID,
+		Rule:        info.Rule,
+		Type:        string(info.Type),
+		TlsEnable:   info.TlsEnable,
+		Priority:    info.Priority,
+		Host:        info.Host,
+		UpStream:    string(upstreamJson),
+		Middlewares: string(middlewareJson),
 	}
 
+	if info.CertId != 0 {
+		if cert, err := GetCertById(info.CertId); err == nil {
+			r.CertID = cert.Id
+		} else {
+			return nil, err
+		}
+	} else {
+		session = session.Omit("CertID")
+	}
+
+	if err := session.Save(&r).Error; err != nil {
+		return nil, err
+	}
 	return &r, nil
 }

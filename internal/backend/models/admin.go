@@ -7,9 +7,9 @@ import (
 
 type Admin struct {
 	Id       int    `json:"id"`
-	Username string `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"` // 用户名
-	Password string `gorm:"column:password;size:255;not null;default:''" json:"-"`                                        // 密码
-	Avatar   string `gorm:"column:avatar" json:"avatar"`                                                                  //头像
+	Username string `gorm:"uniqueIndex:a_u_username_unique;column:username;size:128;not null;default:''" json:"username"`
+	Password string `gorm:"column:password;size:255;not null;default:''" json:"-"`
+	Avatar   string `gorm:"column:avatar" json:"avatar"`
 }
 
 func (t *Admin) TableName() string {

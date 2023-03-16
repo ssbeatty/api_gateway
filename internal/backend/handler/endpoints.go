@@ -5,42 +5,29 @@ import (
 	"api_gateway/internal/backend/payload"
 )
 
-func (s *Service) EndpointsList(c *Context) {
-	var form payload.Pages
-	err := c.ShouldBind(&form)
+// EndpointsQuery query all endpoints
+func (s *Service) EndpointsQuery(c *Context) {
+	records, err := models.QueryEndpoints()
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	c.ResponseOk(records)
+}
+
+// EndpointsCreate create endpoint
+func (s *Service) EndpointsCreate(c *Context) {
+	var req payload.PostEndPointReq
+	err := c.ShouldBind(&req)
 	if err != nil {
 		c.ResponseError(err.Error())
 	} else {
-		Data, err := models.GetEndPointList(form.PageNum, form.PageSize)
+		record, err := models.InsertEndpoint(req)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
-		c.ResponseOk(Data)
-	}
-}
 
-// EndpointsAdd
-// @Summary 新增路由配置
-// @Description 新增路由配置
-// @Param data body payload.PostEndPointReq true "endpoint info"
-// @Tags endpoints
-// @Accept json
-// @Success 200 {object} string
-// @Security ApiKeyAuth
-// @param Authorization header string true "Authorization"
-// @Router /api/v1/endpoints [post]
-func (s *Service) EndpointsAdd(c *Context) {
-	var form payload.PostEndPointReq
-	err := c.ShouldBind(&form)
-	if err != nil {
-		c.ResponseError(err.Error())
-	} else {
-		//Data, err := models.EndPointUpsert(form)
-		//if err != nil {
-		//	c.ResponseError(err.Error())
-		//	return
-		//}
-		c.ResponseOk(nil)
+		c.ResponseOk(record)
 	}
 }

@@ -3,12 +3,12 @@ package models
 import (
 	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/utils"
+	"api_gateway/pkg/logs"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/glebarez/sqlite"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -26,12 +26,13 @@ const (
 	DBDriverMysql    = "mysql"
 	DBDriverPostgres = "postgres"
 	DBDriverSqlite   = "sqlite"
+	ServiceName      = "models"
 )
 
 var (
 	db       *DataBase
 	dataPath string
-	logger   *zerolog.Logger
+	logger   = log.With().Str(logs.ServiceName, ServiceName).Logger()
 )
 
 type DataBase struct {
@@ -95,15 +96,15 @@ func InitModels(config config.DB, ctx context.Context) error {
 	var dataSource string
 
 	dataPath = config.DataPath
-	logger = log.Ctx(ctx)
-	logger.Info().Msg("Backend model init.")
+	_logger := log.Ctx(ctx)
+	_logger.Info().Msg("Backend model init.")
 	newLogger := gormLogger.New(
-		logger,
+		_logger,
 		gormLogger.Config{
-			SlowThreshold:             time.Second,      // 慢 SQL 阈值
-			LogLevel:                  gormLogger.Error, // 日志级别
-			IgnoreRecordNotFoundError: true,             // 忽略ErrRecordNotFound（记录未找到）错误
-			Colorful:                  false,            // 禁用彩色打印
+			SlowThreshold:             time.Second,
+			LogLevel:                  gormLogger.Error,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  false,
 		},
 	)
 
@@ -151,7 +152,7 @@ func InitModels(config config.DB, ctx context.Context) error {
 	}
 
 	if err = db.AutoMigrate(
-		new(Admin),
+		new(Admin), new(Endpoint), new(Router), new(Cert),
 	); err != nil {
 		logger.Err(err).Msg("Migrate error! err: %v")
 		return err

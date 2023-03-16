@@ -9,7 +9,6 @@ import (
 	routerManager "api_gateway/internal/gateway/manager/router"
 	"api_gateway/internal/gateway/manager/upstream"
 	backendProvider "api_gateway/internal/gateway/provider/backend"
-	fileProvider "api_gateway/internal/gateway/provider/file"
 	"api_gateway/internal/gateway/watcher"
 	"api_gateway/pkg/logs"
 	"api_gateway/pkg/safe"
@@ -38,11 +37,10 @@ func main() {
 	webConfig := backendCfg.WebServer
 	backendServer.Serve(webConfig)
 
-	// backend provider
+	// only backend provider
 	backend := backendProvider.NewBackend()
-	fp := fileProvider.NewFile()
 	w := watcher.NewConfigurationWatcher(routinesPool)
-	w.AddProvider(backend, fp)
+	w.AddProvider(backend)
 
 	upstreamFactory := upstream.NewFactory(config.DefaultConfig.Gateway, routinesPool)
 

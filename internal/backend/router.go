@@ -113,6 +113,7 @@ func InitRouter(s *handler.Service) *handler.Service {
 	}
 
 	r.POST("/auth/admin/register", Handle(s.RegisterAdmin))
+	// login
 	r.POST("/auth/admin/login", authMiddleware.LoginHandler)
 	r.POST("/auth/admin/logout", authMiddleware.LogoutHandler)
 	r.POST("/auth/admin/refresh_token", authMiddleware.RefreshHandler)
@@ -120,10 +121,8 @@ func InitRouter(s *handler.Service) *handler.Service {
 	apiV1 := r.Group("/api/v1")
 	apiV1.Use(authMiddleware.MiddlewareFunc())
 	{
-		apiV1.GET("/endpoints", Handle(s.EndpointsList))
-		apiV1.POST("/endpoints", Handle(s.EndpointsAdd))
-		//apiV1.DELETE("/endpoints", Handle(s.EndpointsDelete))
-		//apiV1.GET("/endpoints/:id", Handle(s.EndpointsGetDetail))
+		apiV1.GET("/endpoints", Handle(s.EndpointsQuery))
+		apiV1.POST("/endpoints", Handle(s.EndpointsCreate))
 	}
 
 	s.Engine = r

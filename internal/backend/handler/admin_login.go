@@ -7,10 +7,12 @@ import (
 	"net/http"
 )
 
+// GetVersion get application version
 func (s *Service) GetVersion(c *Context) {
 	c.String(http.StatusOK, version.Version)
 }
 
+// RegisterAdmin register admin user
 func (s *Service) RegisterAdmin(c *Context) {
 	var req payload.AdminRegisterReq
 	err := c.ShouldBind(&req)

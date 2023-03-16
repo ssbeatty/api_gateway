@@ -2,42 +2,61 @@ package models
 
 import (
 	"api_gateway/internal/backend/payload"
+	"gorm.io/gorm/clause"
 )
 
-type EndPoint struct {
-	Id      int      `json:"id"`
-	Name    string   `gorm:"column:endpoint_name;type:varchar(64);not null;default:''" json:"name"`
-	Type    string   `gorm:"column:type;size:64;not null;default:''" json:"type"`
-	Routers []Router `gorm:"constraint:OnDelete:SET NULL;" json:"routers"`
+type Endpoint struct {
+	Id         int      `json:"id"`
+	Name       string   `gorm:"column:endpoint_name;not null;index:type_port,unique" json:"name"`
+	Type       string   `gorm:"column:type;not null" json:"type"`
+	ListenPort int      `gorm:"column:listen_port;index:type_port,unique" json:"listen_port"`
+	Routers    []Router `gorm:"constraint:OnDelete:CASCADE;" json:"routers"`
 }
 
-func (t *EndPoint) TableName() string {
-	return "endpoint"
+func (t *Endpoint) TableName() string {
+	return "endpoints"
 }
 
-func InsertEndPoint(name string, tp string, routers []payload.RouterInfo) (*EndPoint, error) {
-
-	endPoint := EndPoint{
-		Name: name,
-		Type: tp,
+func InsertEndpoint(info payload.PostEndPointReq) (*Endpoint, error) {
+	endpoint := Endpoint{
+		Name:       info.Name,
+		Type:       string(info.Type),
+		ListenPort: info.ListenPort,
 	}
-	err := db.Create(&endPoint).Error
+
+	err := db.Create(&endpoint).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &endPoint, nil
+	for _, info := range info.Routers {
+		_, err = InsertOrUpdateRouter(endpoint.Id, info)
+		if err != nil {
+			logger.Error().Err(err).Msg("Error when insert router")
+			continue
+		}
+	}
+
+	return &endpoint, nil
 }
 
-func DeleteEndPointById(id int) (*EndPoint, error) {
-	endPoint := EndPoint{}
+func QueryEndpoints() ([]Endpoint, error) {
+	var records []Endpoint
+	err := db.Preload(clause.Associations).Find(&records).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
+
+func DeleteEndPointById(id int) (*Endpoint, error) {
+	endPoint := Endpoint{}
 	err := db.Where("id = ?", id).First(&endPoint).Error
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Model(&endPoint).Association("Routers").Clear(); err != nil {
-		logger.Error().AnErr("DeleteEndPointById error Association tag Clear ", err)
-	}
+
 	err = db.Delete(&endPoint).Error
 	if err != nil {
 		logger.Error().AnErr("DeleteEndPointById error", err)
@@ -48,43 +67,11 @@ func DeleteEndPointById(id int) (*EndPoint, error) {
 	return &endPoint, nil
 }
 
-func UpDataEndPoint(id int, name string, tp string, routers []payload.RouterInfo) (*EndPoint, error) {
-	endPoint := EndPoint{Id: id}
-	err := db.Where("id = ?", id).First(&endPoint).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if name != "" {
-		endPoint.Name = name
-	}
-	if tp != "" {
-		endPoint.Type = tp
-	}
-	return &endPoint, nil
-}
-
-func GetEndPointById(id int) (*EndPoint, error) {
-	endPoint := EndPoint{}
+func GetEndPointById(id int) (*Endpoint, error) {
+	endPoint := Endpoint{}
 	err := db.Where("id = ?", id).First(&endPoint).Error
 	if err != nil {
 		return nil, err
 	}
 	return &endPoint, nil
-}
-
-func GetEndPointList(pageSize, page int) ([]*EndPoint, error) {
-	switch {
-	case pageSize <= 0:
-		pageSize = 20
-	case page <= 0:
-		page = 1
-	}
-	var endPoint []*EndPoint
-	offset := (page - 1) * pageSize
-	err := db.Order(defaultSort).Offset(offset).Limit(pageSize).Find(&endPoint).Error
-	if err != nil {
-		return nil, err
-	}
-	return endPoint, nil
 }
