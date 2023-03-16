@@ -1,4 +1,4 @@
-package handler
+package service
 
 import (
 	"api_gateway/internal/backend/models"

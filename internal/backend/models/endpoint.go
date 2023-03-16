@@ -40,7 +40,7 @@ func InsertEndpoint(info payload.PostEndPointReq) (*Endpoint, error) {
 	return &endpoint, nil
 }
 
-func QueryEndpoints() ([]Endpoint, error) {
+func GetAllEndpoints() ([]Endpoint, error) {
 	var records []Endpoint
 	err := db.Preload(clause.Associations).Find(&records).Error
 	if err != nil {

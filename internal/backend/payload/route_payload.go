@@ -37,8 +37,9 @@ type MiddleWareInfo struct {
 }
 
 type UpStreamInfo struct {
-	Type        config.UpstreamType `json:"type" binding:"required,oneof=url static server"`
-	Path        []string            `json:"path"`
-	Weights     []string            `json:"weights"`
-	LoadBalance loadbalancer.LbType `json:"load_balance"`
+	Type                config.UpstreamType `json:"type" binding:"required,oneof=url static server"`
+	Path                []string            `json:"path"`
+	Weights             []int               `json:"weights"`
+	LoadBalance         loadbalancer.LbType `json:"load_balance"`
+	MaxIdleConnsPerHost int                 `json:"maxIdleConnsPerHost,omitempty"`
 }

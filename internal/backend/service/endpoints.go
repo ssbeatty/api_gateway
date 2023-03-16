@@ -1,4 +1,4 @@
-package handler
+package service
 
 import (
 	"api_gateway/internal/backend/models"
@@ -7,7 +7,7 @@ import (
 
 // EndpointsQuery query all endpoints
 func (s *Service) EndpointsQuery(c *Context) {
-	records, err := models.QueryEndpoints()
+	records, err := models.GetAllEndpoints()
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
@@ -27,7 +27,7 @@ func (s *Service) EndpointsCreate(c *Context) {
 			c.ResponseError(err.Error())
 			return
 		}
-
+		s.ReloadAllEndpoint()
 		c.ResponseOk(record)
 	}
 }
@@ -50,7 +50,7 @@ func (s *Service) EndpointsUpdate(c *Context) {
 			c.ResponseError(err.Error())
 			return
 		}
-
+		s.ReloadAllEndpoint()
 		c.ResponseOk(resp)
 	}
 }
@@ -83,6 +83,7 @@ func (s *Service) EndpointsDelete(c *Context) {
 			c.ResponseError(err.Error())
 			return
 		}
+		s.ReloadAllEndpoint()
 		c.ResponseOk(nil)
 	}
 }

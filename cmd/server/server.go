@@ -1,10 +1,9 @@
 package main
 
 import (
-	backendServer "api_gateway/internal/backend"
 	backendConfig "api_gateway/internal/backend/config"
-	"api_gateway/internal/backend/handler"
 	"api_gateway/internal/backend/models"
+	"api_gateway/internal/backend/service"
 	"api_gateway/internal/gateway"
 	"api_gateway/internal/gateway/config"
 	routerManager "api_gateway/internal/gateway/manager/router"
@@ -41,8 +40,8 @@ func main() {
 	backend := backendProvider.NewBackend()
 	webConfig := backendCfg.WebServer
 
-	backendService := handler.NewService(webConfig, backend)
-	backendServer.Serve(backendService)
+	backendService := service.NewService(webConfig, backend)
+	backendService.Serve()
 
 	w := watcher.NewConfigurationWatcher(routinesPool)
 	w.AddProvider(backend)

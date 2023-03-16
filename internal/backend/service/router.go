@@ -1,7 +1,6 @@
-package backend
+package service
 
 import (
-	"api_gateway/internal/backend/handler"
 	"api_gateway/internal/backend/models"
 	"api_gateway/internal/backend/payload"
 	"fmt"
@@ -18,29 +17,23 @@ const (
 	identityKey = "id"
 )
 
-// exportHeaders export header Content-Disposition for axios
-func exportHeaders(ctx *gin.Context) {
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	ctx.Next()
-}
-
-type HandlerFunc func(c *handler.Context)
+type HandlerFunc func(c *Context)
 
 func Handle(h HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := &handler.Context{
+		ctx := &Context{
 			Context: c,
 		}
 		h(ctx)
 	}
 }
 
-func InitRouter(s *handler.Service) *handler.Service {
+func (s *Service) initRouter() *Service {
 	r := gin.New()
 
 	corsConf := cors.DefaultConfig()
 	corsConf.AllowAllOrigins = true
-	r.Use(gin.Recovery()).Use(cors.New(corsConf)).Use(exportHeaders)
+	r.Use(gin.Recovery()).Use(cors.New(corsConf))
 
 	err := mime.AddExtensionType(".js", "application/javascript")
 	if err != nil {
@@ -132,9 +125,12 @@ func InitRouter(s *handler.Service) *handler.Service {
 	return s
 }
 
-func Serve(srv *handler.Service) {
+func (s *Service) Serve() {
 	gin.SetMode(gin.ReleaseMode)
-	s := InitRouter(srv)
+	s.initRouter()
+
+	defer s.ReloadAllEndpoint()
+
 	log.Info().Msg(fmt.Sprintf("Listening and serving HTTP on %s", s.Addr))
 	go func() {
 		if err := s.Engine.Run(s.Addr); err != nil {
