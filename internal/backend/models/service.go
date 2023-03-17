@@ -3,12 +3,12 @@ package models
 import (
 	"api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/utils"
+	"api_gateway/pkg/logs"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/glebarez/sqlite"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -26,12 +26,13 @@ const (
 	DBDriverMysql    = "mysql"
 	DBDriverPostgres = "postgres"
 	DBDriverSqlite   = "sqlite"
+	ServiceName      = "models"
 )
 
 var (
 	db       *DataBase
 	dataPath string
-	logger   *zerolog.Logger
+	logger   = log.With().Str(logs.ServiceName, ServiceName).Logger()
 )
 
 type DataBase struct {
@@ -95,25 +96,25 @@ func InitModels(config config.DB, ctx context.Context) error {
 	var dataSource string
 
 	dataPath = config.DataPath
-	logger = log.Ctx(ctx)
-	logger.Info().Msg("Backend model init.")
+	_logger := log.Ctx(ctx)
+	_logger.Info().Msg("Backend model init.")
 	newLogger := gormLogger.New(
-		logger,
+		_logger,
 		gormLogger.Config{
-			SlowThreshold:             time.Second,      // 慢 SQL 阈值
-			LogLevel:                  gormLogger.Error, // 日志级别
-			IgnoreRecordNotFoundError: true,             // 忽略ErrRecordNotFound（记录未找到）错误
-			Colorful:                  false,            // 禁用彩色打印
+			SlowThreshold:             time.Second,
+			LogLevel:                  gormLogger.Error,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
 		},
 	)
 
-	_ = createDB(config.Driver, config.User, config.Pass, config.DSN, config.DBName)
+	_ = createDB(config.Driver, config.UserName, config.PassWord, config.DSN, config.DBName)
 	dfConfig := &gorm.Config{
 		Logger: newLogger,
 	}
 
 	if config.Driver == DBDriverMysql {
-		dataSource = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", config.User, config.Pass, config.DSN, config.DBName)
+		dataSource = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", config.UserName, config.PassWord, config.DSN, config.DBName)
 		d, err = gorm.Open(mysql.Open(dataSource), dfConfig)
 		db = &DataBase{d, nil}
 	} else if config.Driver == DBDriverPostgres {
@@ -122,7 +123,7 @@ func InitModels(config config.DB, ctx context.Context) error {
 			return errors.New("dsn parse error")
 		}
 		dataSource = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-			dsnArgs[0], config.User, config.Pass, config.DBName, dsnArgs[1],
+			dsnArgs[0], config.UserName, config.PassWord, config.DBName, dsnArgs[1],
 		)
 		d, err = gorm.Open(postgres.Open(dataSource), dfConfig)
 		db = &DataBase{d, nil}
@@ -147,6 +148,13 @@ func InitModels(config config.DB, ctx context.Context) error {
 
 	if err != nil {
 		logger.Error().AnErr("gorm open filed", err)
+		return err
+	}
+
+	if err = db.AutoMigrate(
+		new(Admin), new(Endpoint), new(Router), new(Cert),
+	); err != nil {
+		logger.Err(err).Msg("Migrate error! err: %v")
 		return err
 	}
 

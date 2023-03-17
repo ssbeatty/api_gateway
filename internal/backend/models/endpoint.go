@@ -1,112 +1,105 @@
 package models
 
 import (
-	"api_gateway/internal/backend/utils"
-	"time"
+	"api_gateway/internal/backend/payload"
+	"gorm.io/gorm/clause"
 )
 
-type EndPoint struct {
-	Id         int      `json:"id"`
-	Name       string   `gorm:"column:endpoint_name;type:varchar(64);not null;default:''" json:"name"`
-	Type       string   `gorm:"column:type;size:64;not null;default:''" json:"type"`
-	Routers    []Router `gorm:"constraint:OnDelete:SET NULL;" json:"routers"`
-	UpdateTime string   `gorm:"column:update_time" description:"update_time" json:"update_time"`
-	CreatTime  string   `gorm:"column:creat_time" description:"creat_time" json:"creat_time"`
+type Endpoint struct {
+	Id         int      `gorm:"primaryKey" json:"id"`
+	Name       string   `gorm:"column:endpoint_name;not null;index:type_port,unique" json:"name"`
+	Type       string   `gorm:"column:type;not null" json:"type"`
+	ListenPort int      `gorm:"column:listen_port;index:type_port,unique" json:"listen_port"`
+	Routers    []Router `gorm:"constraint:OnDelete:CASCADE;" json:"routers"`
 }
 
-func (t *EndPoint) TableName() string {
-	return "endpoint"
+func (t *Endpoint) TableName() string {
+	return "endpoints"
 }
 
-func InsertEndPoint(name string, tp string, routers []int) (*EndPoint, error) {
-	var rs []Router
-	for _, tagId := range rs {
-		router := Router{}
-		err := db.Where("id = ?", tagId).First(&router).Error
+func InsertEndpoint(info payload.PostEndPointReq) (*Endpoint, error) {
+	endpoint := Endpoint{
+		Name:       info.Name,
+		Type:       string(info.Type),
+		ListenPort: info.ListenPort,
+	}
+
+	err := db.Create(&endpoint).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, info := range info.Routers {
+		_, err = InsertRouter(endpoint.Id, info)
 		if err != nil {
-			logger.Error().AnErr("InsertEndPoint error when First router ", err)
+			logger.Error().Err(err).Msg("Error when insert router")
 			continue
 		}
-		rs = append(rs, router)
-	}
-	endPoint := EndPoint{
-		Name:       name,
-		Type:       tp,
-		Routers:    rs,
-		CreatTime:  time.Now().Format(utils.StandardFormat),
-		UpdateTime: time.Now().Format(utils.StandardFormat),
-	}
-	err := db.Create(&endPoint).Error
-	if err != nil {
-		return nil, err
 	}
 
-	return &endPoint, nil
+	return &endpoint, nil
 }
 
-func DeleteEndPointById(id int) (*EndPoint, error) {
-	endPoint := EndPoint{}
-	err := db.Where("id = ?", id).First(&endPoint).Error
+func GetAllEndpoints() ([]Endpoint, error) {
+	var records []Endpoint
+	err := db.Preload(clause.Associations).Find(&records).Error
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Model(&endPoint).Association("Routers").Clear(); err != nil {
-		logger.Error().AnErr("DeleteEndPointById error Association tag Clear ", err)
+
+	return records, nil
+}
+
+func UpdateEndpoint(id int, info payload.PostEndPointReq) (*Endpoint, error) {
+	endpoint := Endpoint{Id: id}
+
+	if info.Name != "" {
+		endpoint.Name = info.Name
 	}
+	if info.Type != "" {
+		endpoint.Type = string(info.Type)
+	}
+	if info.ListenPort != 0 {
+		endpoint.ListenPort = info.ListenPort
+	}
+
+	if err := db.Updates(&endpoint).Error; err != nil {
+		return nil, err
+	}
+
+	err := ClearEndpointRouters(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, i := range info.Routers {
+		_, err = InsertRouter(endpoint.Id, i)
+		if err != nil {
+			logger.Error().Err(err).Msg("Error when insert router")
+			continue
+		}
+	}
+	return GetEndPointById(id)
+}
+
+func DeleteEndPointById(id int) error {
+	endPoint := Endpoint{}
+	err := db.Where("id = ?", id).First(&endPoint).Error
+	if err != nil {
+		return err
+	}
+
 	err = db.Delete(&endPoint).Error
 	if err != nil {
-		logger.Error().AnErr("DeleteEndPointById error", err)
-
-		return nil, err
+		return err
 	}
 
-	return &endPoint, nil
+	return nil
 }
 
-func UpDataEndPoint(id int, name string, tp string, routers []int) (*EndPoint, error) {
-	endPoint := EndPoint{Id: id}
-	err := db.Where("id = ?", id).First(&endPoint).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if len(routers) > 0 {
-		var rs []Router
-		for _, routerId := range routers {
-			r := Router{}
-			err = db.Where("id = ?", routerId).First(&r).Error
-			if err != nil {
-				logger.Error().AnErr("upDataEndpoint error when first router", err)
-				continue
-			}
-			rs = append(rs, r)
-		}
-		if len(rs) != 0 {
-			if err := db.Model(&endPoint).Association("Routers").Clear(); err != nil {
-				logger.Error().AnErr("upDataEndpoint error when Association router Clear", err)
-
-			}
-			endPoint.Routers = rs
-		}
-	} else {
-		if err := db.Model(&endPoint).Association("Routers").Clear(); err != nil {
-			logger.Error().AnErr("upDataEndpoint Association router Clear failed", err)
-		}
-	}
-
-	if name != "" {
-		endPoint.Name = name
-	}
-	if tp != "" {
-		endPoint.Type = tp
-	}
-	endPoint.UpdateTime = time.Now().Format(utils.StandardFormat)
-	return &endPoint, nil
-}
-
-func GetEndPointById(id int) (*EndPoint, error) {
-	endPoint := EndPoint{}
-	err := db.Where("id = ?", id).First(&endPoint).Error
+func GetEndPointById(id int) (*Endpoint, error) {
+	endPoint := Endpoint{}
+	err := db.Where("id = ?", id).Preload(clause.Associations).First(&endPoint).Error
 	if err != nil {
 		return nil, err
 	}

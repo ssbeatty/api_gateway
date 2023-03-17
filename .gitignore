@@ -20,3 +20,4 @@ endpoints.yaml
 *.pem
 logs
 *.db
+certs.key

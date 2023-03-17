@@ -8,7 +8,7 @@ type Ca struct {
 }
 
 func (t *Ca) TableName() string {
-	return "ca_file"
+	return "cas"
 }
 
 func InsertCa(tid int, fileName string, keyFile string) (*Ca, error) {

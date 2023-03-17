@@ -1,15 +1,14 @@
 package main
 
 import (
-	backendServer "api_gateway/internal/backend"
 	backendConfig "api_gateway/internal/backend/config"
 	"api_gateway/internal/backend/models"
+	"api_gateway/internal/backend/service"
 	"api_gateway/internal/gateway"
 	"api_gateway/internal/gateway/config"
 	routerManager "api_gateway/internal/gateway/manager/router"
 	"api_gateway/internal/gateway/manager/upstream"
 	backendProvider "api_gateway/internal/gateway/provider/backend"
-	fileProvider "api_gateway/internal/gateway/provider/file"
 	"api_gateway/internal/gateway/watcher"
 	"api_gateway/pkg/logs"
 	"api_gateway/pkg/safe"
@@ -19,30 +18,33 @@ import (
 )
 
 func main() {
-	// init default
+	// init default config
 	config.SetupConfig()
 	backendConfig.SetupConfig()
 
+	// setup log
 	logConfiguration := config.DefaultConfig.Log
 	logs.SetupLogger(logConfiguration.Level, logConfiguration.Path)
 
+	//system signal
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	routinesPool := safe.NewPool(ctx, -1)
 
+	// init backend database
 	backendCfg := backendConfig.DefaultConfig
-
 	err := models.InitModels(backendCfg.DB, ctx)
 	if err != nil {
 		panic(err)
 	}
-	webConfig := backendCfg.WebServer
-	backendServer.Serve(webConfig)
-
-	// backend provider
+	// only backend provider
 	backend := backendProvider.NewBackend()
-	fp := fileProvider.NewFile()
+	webConfig := backendCfg.WebServer
+
+	backendService := service.NewService(webConfig, backend)
+	backendService.Serve()
+
 	w := watcher.NewConfigurationWatcher(routinesPool)
-	w.AddProvider(backend, fp)
+	w.AddProvider(backend)
 
 	upstreamFactory := upstream.NewFactory(config.DefaultConfig.Gateway, routinesPool)
 

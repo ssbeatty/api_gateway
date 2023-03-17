@@ -2,7 +2,7 @@ log:
   level: debug
   path: stdout
   access_log:
-    enable: true
+    enable: false
     httpLogPath: /path/http_access.log
 
 gateway:
@@ -12,3 +12,19 @@ gateway:
   httpReadTimeout: 30s
   httpWriteTimeout: 30s
   httpIdleTimeout: 120s
+
+db:
+  driver: sqlite
+  dsn: 127.0.0.1:3306
+  user: root
+  password: 123456
+  db_name: gateway
+  data_path: data
+
+web:
+  bind_addr: "0.0.0.0"
+  bind_port: 8099
+  jwt:
+    bearer_schema: Bearer
+    jwt_secret: certs.key
+    jwt_exp: 2h
