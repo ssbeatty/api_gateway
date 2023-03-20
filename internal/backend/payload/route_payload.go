@@ -43,3 +43,14 @@ type UpStreamInfo struct {
 	LoadBalance         loadbalancer.LbType `json:"load_balance"`
 	MaxIdleConnsPerHost int                 `json:"maxIdleConnsPerHost,omitempty"`
 }
+
+type CAInfo struct {
+	Id         int    `json:"id"`
+	CertsFile  string `json:"certs_file"`
+	KeyFile    string `json:"key_file"`
+	ClientAuth string `json:"client_auth"`
+}
+
+type OptionCAReq struct {
+	Id int `uri:"id" binding:"required"`
+}

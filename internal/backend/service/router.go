@@ -118,6 +118,10 @@ func (s *Service) initRouter() *Service {
 		apiV1.POST("/endpoints", Handle(s.EndpointsCreate))
 		apiV1.PUT("/endpoints/:id", Handle(s.EndpointsUpdate))
 		apiV1.DELETE("/endpoints/:id", Handle(s.EndpointsDelete))
+		apiV1.GET("/cas", Handle(s.CAsQuery))
+		apiV1.GET("/cas/:id", Handle(s.CAsDetail))
+		apiV1.POST("/cas", Handle(s.CAsCreate))
+		apiV1.DELETE("/cas/:id", Handle(s.CAsDelete))
 	}
 
 	s.Engine = r

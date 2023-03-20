@@ -1,21 +1,26 @@
 package models
 
-type Ca struct {
-	Id       int    `json:"id"`
-	TlsId    int    `gorm:"column:tls_id" json:"tls_id"`
-	FileName string `gorm:"column:filename" json:"file_name"`
-	KeyFile  string `gorm:"column:key_file;type:text" json:"key_file"`
+import (
+	"api_gateway/internal/backend/payload"
+	"gorm.io/gorm/clause"
+)
+
+type CA struct {
+	Id         int    `gorm:"primaryKey" json:"id"`
+	CertsFile  string `gorm:"type:text" json:"certs_file"`
+	KeyFile    string `gorm:"type:text" json:"key_file"`
+	ClientAuth string `gorm:"column:auth" json:"client_auth"`
 }
 
-func (t *Ca) TableName() string {
+func (t *CA) TableName() string {
 	return "cas"
 }
 
-func InsertCa(tid int, fileName string, keyFile string) (*Ca, error) {
-	ca := Ca{
-		TlsId:    tid,
-		FileName: fileName,
-		KeyFile:  keyFile,
+func InsertCA(CAInfo payload.CAInfo) (*CA, error) {
+	ca := CA{
+		CertsFile:  CAInfo.CertsFile,
+		KeyFile:    CAInfo.KeyFile,
+		ClientAuth: CAInfo.ClientAuth,
 	}
 	err := db.Create(&ca).Error
 	if err != nil {
@@ -24,8 +29,8 @@ func InsertCa(tid int, fileName string, keyFile string) (*Ca, error) {
 	return &ca, nil
 }
 
-func DeleteCaById(id int) (*Ca, error) {
-	ca := Ca{}
+func DeleteCAById(id int) (*CA, error) {
+	ca := CA{}
 	err := db.Where("id = ?", id).First(&ca).Error
 	if err != nil {
 		return nil, err
@@ -33,30 +38,21 @@ func DeleteCaById(id int) (*Ca, error) {
 	return &ca, nil
 }
 
-func UpDataCa(id int, fileName string, keyFile string) (*Ca, error) {
-	ca := Ca{Id: id}
+func GetCAById(id int) (*CA, error) {
+	ca := CA{}
 	err := db.Where("id = ?", id).First(&ca).Error
 	if err != nil {
-		return nil, err
-	}
-	if fileName != "" {
-		ca.FileName = fileName
-	}
-	if keyFile != "" {
-		ca.KeyFile = keyFile
-	}
-
-	if err := db.Save(&ca).Error; err != nil {
 		return nil, err
 	}
 	return &ca, nil
 }
 
-func GetCaById(id int) (*Ca, error) {
-	ca := Ca{}
-	err := db.Where("id = ?", id).First(&ca).Error
+func GetAllCAs() ([]CA, error) {
+	var cas []CA
+	err := db.Preload(clause.Associations).Find(&cas).Error
 	if err != nil {
 		return nil, err
 	}
-	return &ca, nil
+
+	return cas, nil
 }

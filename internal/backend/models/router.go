@@ -18,6 +18,8 @@ type Router struct {
 	EndpointId  int      `gorm:"column:endpoint_id" json:"endpoint_id"`
 	CertID      int      `gorm:"column:cert_id" json:"cert_id"`
 	Cert        Cert     `gorm:"constraint:OnDelete:SET NULL;" json:"-"`
+	CaID        int      `gorm:"column:ca_id" json:"ca_id"`
+	CA          CA       `gorm:"constraint:OnDelete:SET NULL;" json:"-"`
 	Endpoint    Endpoint `json:"-"`
 }
 
