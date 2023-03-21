@@ -123,15 +123,19 @@ func (s *Service) initRouter() *Service {
 	apiV1 := r.Group("/api/v1")
 	apiV1.Use(authMiddleware.MiddlewareFunc())
 	{
+		// endpoints
 		apiV1.GET("/endpoints", Handle(s.EndpointsQuery))
 		apiV1.GET("/endpoints/:id", Handle(s.EndpointsDetail))
 		apiV1.POST("/endpoints", Handle(s.EndpointsCreate))
 		apiV1.PUT("/endpoints/:id", Handle(s.EndpointsUpdate))
 		apiV1.DELETE("/endpoints/:id", Handle(s.EndpointsDelete))
-		apiV1.GET("/cas", Handle(s.CAsQuery))
-		apiV1.GET("/cas/:id", Handle(s.CAsDetail))
-		apiV1.POST("/cas", Handle(s.CAsCreate))
-		apiV1.DELETE("/cas/:id", Handle(s.CAsDelete))
+
+		// ca certs
+		apiV1.GET("/ca_certs", Handle(s.CACertsQuery))
+		apiV1.GET("/ca_certs/:id", Handle(s.CACertsDetail))
+		apiV1.PUT("/ca_certs/:id", Handle(s.CACertsUpdate))
+		apiV1.POST("/ca_certs", Handle(s.CACertsCreate))
+		apiV1.DELETE("/ca_certs/:id", Handle(s.CACertsDelete))
 	}
 
 	s.Engine = r

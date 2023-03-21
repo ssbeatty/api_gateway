@@ -27,19 +27,3 @@ func (s *Service) RegisterAdmin(c *Context) {
 		c.ResponseOk(user)
 	}
 }
-
-// RegisterTenant register tenant user
-func (s *Service) RegisterTenant(c *Context) {
-	var req payload.TenantRegisterReq
-	err := c.ShouldBind(&req)
-	if err != nil {
-		c.ResponseError(err.Error())
-	} else {
-		user, err := models.InsertTenant(req.UserName, req.Password)
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
-		}
-		c.ResponseOk(user)
-	}
-}

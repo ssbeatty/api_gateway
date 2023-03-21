@@ -22,7 +22,7 @@ const (
 	HttpStatusOk        = 200
 	HttpStatusError     = 400
 	HttpResponseSuccess = "success"
-	ServiceBackend      = "backend"
+	BackendService      = "backend"
 )
 
 type Provider interface {
@@ -57,7 +57,7 @@ func (s *Service) ReloadAllEndpoint() {
 		}
 		for _, r := range endpoint.Routers {
 			var (
-				upstream    = payload.UpStreamInfo{}
+				upstream    = payload.UpstreamInfo{}
 				middlewares []gatewayConfig.Middleware
 			)
 
@@ -111,7 +111,7 @@ func (s *Service) ReloadAllEndpoint() {
 }
 
 func NewService(conf config.WebServer, provider Provider) *Service {
-	logger := log.With().Str(logs.ServiceName, ServiceBackend).Logger()
+	logger := log.With().Str(logs.ServiceName, BackendService).Logger()
 
 	pkFile, err := os.Open(conf.Jwt.JwtSecretPath)
 	if err != nil {
