@@ -4,6 +4,8 @@ const (
 	RespTypeMsg   = "msg"
 	RespTypeError = "error"
 	RespTypeData  = "data"
+
+	SuccessMessage = "success"
 )
 
 type Response struct {

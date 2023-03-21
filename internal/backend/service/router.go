@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"mime"
+	"net/http"
 	"time"
 )
 
@@ -75,12 +76,21 @@ func (s *Service) initRouter() *Service {
 			if errA != nil {
 				return nil, jwt.ErrForbidden
 			}
-			if _ = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password)); err != nil {
+			if err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password)); err != nil {
 				return nil, jwt.ErrFailedAuthentication
 			} else {
 				return &loginVals, nil
 			}
-
+		},
+		LoginResponse: func(c *gin.Context, code int, token string, expire time.Time) {
+			c.JSON(http.StatusOK, payload.Response{
+				Code: code,
+				Msg:  payload.SuccessMessage,
+				Data: payload.AdminLoginPasswordResp{
+					Token:  token,
+					Expire: expire,
+				},
+			})
 		},
 		Authorizator: func(data interface{}, c *gin.Context) bool {
 			if _, ok := data.(*payload.AdminLoginPasswordReq); ok {
@@ -90,7 +100,7 @@ func (s *Service) initRouter() *Service {
 			return false
 		},
 		Unauthorized: func(c *gin.Context, code int, message string) {
-			c.JSON(code, payload.Response{
+			c.JSON(http.StatusOK, payload.Response{
 				Code: code,
 				Msg:  message,
 			})
