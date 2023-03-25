@@ -89,8 +89,8 @@ func (s *Service) ReloadAllEndpoint() {
 				Middlewares: middlewares,
 				TLSConfig: gatewayConfig.TLS{
 					Type:       "bytes",
-					CsrFile:    r.Cert.CsrFile,
-					KeyFile:    r.Cert.KeyFile,
+					CsrFile:    r.Cert.Csr,
+					KeyFile:    r.Cert.Key,
 					CaFiles:    nil,
 					ClientAuth: r.Cert.ClientAuth,
 				},
