@@ -28,7 +28,7 @@ vms之间全部通过腾讯云内网IP通讯, 腾讯控制台指明了内网带�
 ### 测试命令
 在测试vm上执行
 ```shell
-wrk -t20 -c1000 -d60s --latency  http://{gatewayIP}:8001/bench
+wrk -t20 -c1000 -d60s --latency  http://{gatewayIP}:{appPort}/bench
 ```
 
 ## 配置
@@ -132,7 +132,7 @@ version: '3'
 
 services:
   proxy:
-    image: traefik:v2.4
+    image: traefik:v2.9
     restart: always
     ports:
       - "8080:8080"
@@ -215,52 +215,54 @@ endpoints:
 
 ## 测试结果
 ```text
-wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8001/bench
-Running 1m test @ http://10.206.16.10:8001/bench
+# nginx
+wrk -t20 -c1000 -d60s --latency  http://10.206.0.9:8001/bench
+Running 1m test @ http://10.206.0.9:8001/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     6.81ms    3.66ms  52.36ms   70.19%
-    Req/Sec     7.42k     1.72k   33.90k    64.32%
+    Latency     7.84ms    3.77ms  39.37ms   59.56%
+    Req/Sec     6.41k     2.72k   26.83k    89.57%
   Latency Distribution
-     50%    6.80ms
-     75%   10.08ms
-     90%   10.56ms
-     99%   14.40ms
-  8864116 requests in 1.00m, 1.16GB read
-Requests/sec: 147491.13
-Transfer/sec:     19.83MB
+     50%    8.97ms
+     75%   10.89ms
+     90%   11.88ms
+     99%   14.22ms
+  7664814 requests in 1.00m, 1.01GB read
+Requests/sec: 127533.97
+Transfer/sec:     17.15MB
 
 
-wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8002/bench
-Running 1m test @ http://10.206.16.10:8002/bench
+# traefik
+wrk -t20 -c1000 -d60s --latency  http://10.206.0.9:8002/bench
+Running 1m test @ http://10.206.0.9:8002/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    28.98ms    7.55ms 236.87ms   82.26%
-    Req/Sec     1.74k   144.00     3.52k    75.11%
+    Latency    29.35ms    8.74ms 262.34ms   87.83%
+    Req/Sec     1.73k   155.10     4.90k    83.46%
   Latency Distribution
-     50%   28.41ms
-     75%   31.92ms
+     50%   28.79ms
+     75%   32.24ms
      90%   35.82ms
-     99%   50.51ms
-  2081968 requests in 1.00m, 202.52MB read
-Requests/sec:  34647.36
-Transfer/sec:      3.37MB
+     99%   51.60ms
+  2061283 requests in 1.00m, 200.51MB read
+Requests/sec:  34299.35
+Transfer/sec:      3.34MB
 
-
-wrk -t20 -c1000 -d60s --latency  http://10.206.16.10:8003/bench
-Running 1m test @ http://10.206.16.10:8003/bench
+# api_gateway
+wrk -t20 -c1000 -d60s --latency  http://10.206.0.9:8003/bench
+Running 1m test @ http://10.206.0.9:8003/bench
   20 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    21.66ms    5.42ms 196.03ms   84.43%
-    Req/Sec     2.33k   183.95     7.83k    83.10%
+    Latency    23.44ms    5.84ms 184.09ms   82.86%
+    Req/Sec     2.15k   171.09     5.82k    82.08%
   Latency Distribution
-     50%   21.38ms
-     75%   23.80ms
-     90%   26.17ms
-     99%   36.40ms
-  2783878 requests in 1.00m, 270.80MB read
-Requests/sec:  46329.19
-Transfer/sec:      4.51MB
+     50%   23.12ms
+     75%   25.85ms
+     90%   28.57ms
+     99%   38.97ms
+  2571925 requests in 1.00m, 250.18MB read
+Requests/sec:  42798.18
+Transfer/sec:      4.16MB
 ```
 
 ## 结论
